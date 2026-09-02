@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — งานซ่อมลูกหีบ</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.jtbl{width:100%;border-collapse:collapse;font-size:13px}
+.jtbl th{font-size:11px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 8px;border-bottom:2px solid var(--line)}
+.jtbl th.rt,.jtbl td.rt{text-align:right}
+.jtbl td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.jtbl tbody tr{cursor:pointer;transition:.12s}
+.jtbl tbody tr:hover td{background:var(--panel2)}
+.jtbl .jn{font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.jtbl .jo{font-size:10.5px;color:var(--ink2);font-weight:400;width:100%}
+.jtbl .jsub{font-size:10px;color:var(--ink2);font-weight:400}
+.jtbl .jbar .bar{height:9px}
+.chipst{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.drill{border:1px solid var(--line2);background:var(--panel2);color:var(--brand);font-size:11.5px;font-weight:600;border-radius:7px;padding:4px 9px;cursor:pointer}
+.drill:hover{border-color:var(--brand)}
+.tblwrap{overflow-x:auto}
+.dttbl{width:100%;border-collapse:collapse}
+.dttbl th{font-size:10.5px;color:var(--ink2);font-weight:700;text-align:left;padding:6px 6px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.dttbl th.rt,.dttbl td.rt{text-align:right;white-space:nowrap}
+.dttbl td{padding:6px 6px;border-bottom:1px solid var(--line);font-size:12px}
+.dttbl tbody tr:hover td{background:var(--panel2)}
+#detail .dbody{padding:12px 16px 40px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="logo">📊</div>
+      <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
+      <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
+    </div>
+    <span class="save-dot"><b id="saveDot"></b><span id="saveTxt">พร้อมใช้งาน</span></span>
+    <a class="tbtn pri" href="index.html">✏️ กรอกข้อมูล</a>
+    <button class="tbtn" id="btnSnap">📸 บันทึกวันนี้</button>
+    <button class="tbtn" id="btnSync">☁️ เชื่อม Sheet</button>
+    <button class="tbtn" id="btnCal">📅 ปฏิทิน</button>
+    <button class="tbtn" id="btnExport">⬇ ส่งออก</button>
+    <button class="tbtn" id="btnImport">⬆ นำเข้า</button>
+    <button class="tbtn" id="btnTheme">🌓</button>
+    <input type="file" id="fileIn" accept="application/json" hidden>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="periodbar" id="periodBar"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="curverow">
+    <div class="card chart-card">
+      <div class="sec-title"><div class="sec-ic">📈</div><h2>เส้นความก้าวหน้า (S-Curve) · แผน vs จริง</h2><span class="pill" id="curveHint"></span></div>
+      <canvas id="scurve"></canvas>
+      <div class="ck">
+        <span><i style="background:var(--brand)"></i>แผนสะสม</span>
+        <span><i style="background:var(--green)"></i>จริงสะสม (จาก Snapshot)</span>
+        <span><i style="background:var(--ink2);height:2px;opacity:.6"></i>วันนี้</span>
+      </div>
+    </div>
+    <div class="card act-card">
+      <div class="sec-title"><div class="sec-ic" style="background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)">⚠️</div><h2>จุดที่ต้องเร่ง</h2></div>
+      <div id="alerts"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;padding:18px">
+    <div class="sec-title"><div class="sec-ic">🧮</div><h2>น้ำหนักและความคืบหน้ารายงาน (10 Jobs)</h2><span class="pill">คลิกแถวเพื่อดูดีเทล Task</span></div>
+    <div class="tblwrap" id="jobsTable"></div>
+  </div>
+
+  <div class="cols" id="groups" style="margin-top:18px"></div>
+
+  <div class="card cal" id="calCard" style="margin-top:18px;display:none">
+    <div class="sec-title"><div class="sec-ic">📅</div><h2>ปฏิทินวันทำงาน / วันหยุด</h2><span class="pill">ก.ย.–พ.ย. 2026</span></div>
+    <div class="calmonths" id="calMonths"></div>
+    <div class="calleg">
+      <span><i style="background:var(--panel2);border:1px solid var(--line2)"></i>ทำงานปกติ (8 ชม.)</span>
+      <span><i style="background:color-mix(in srgb,var(--amber) 22%,transparent)"></i>สัปดาห์หยุดเสาร์ → จ-ศ 9 ชม.</span>
+      <span><i style="background:color-mix(in srgb,var(--red) 20%,transparent)"></i>วันหยุด (อาทิตย์ / เสาร์เว้นเสาร์)</span>
+      <span><i style="outline:2px solid var(--brand);background:transparent"></i>หมุดหมายแผน</span>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="dtScrim"></div>
+<aside class="drawer" id="detail" aria-hidden="true">
+  <div class="dhead"><div><div class="dt" id="dtTitle">—</div><div class="ds" id="dtSub">—</div></div><button class="xbtn" id="dtClose">✕</button></div>
+  <div class="dmini" id="dtMini"></div>
+  <div class="dbody tblwrap" id="dtBody"></div>
+</aside>
+
+<footer>
+  <div>Executive Dashboard · น้ำหนัก man-hour (คน×ชม.จริง 8/9 ตัดวันหยุด) · 10 Jobs = 100% (ไม่รวม drump+ตะกาว) · ข้อมูลซิงค์กับ Google Sheet</div>
+</footer>
+
+<script src="shared.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>

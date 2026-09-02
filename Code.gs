@@ -23,7 +23,16 @@ var STATE_SHEET = '_state';
 var TABLE_SHEET = 'ชีต1';
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.snap) return json_({ ok: true, snapshots: readSnapshots_() });
   return json_({ ok: true, data: getState_() });
+}
+
+function readSnapshots_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Snapshot');
+  if (!sh || sh.getLastRow() < 2) return [];
+  var vals = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues();
+  return vals.map(function (r) { return { date: String(r[0]), overall: (r[2] || 0) * 100, plan: (r[3] || 0) * 100 }; });
 }
 
 function doPost(e) {
