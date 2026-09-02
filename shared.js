@@ -114,7 +114,9 @@ function wireSync(){
 /* ---- cane-truck race: วิ่งตาม % งานซ่อมรวมทั้งแผนก เข้าเส้นชัยที่ 100% ---- */
 function renderRace(){const t=$("truck");if(!t)return;
   const p=Math.max(0,Math.min(100,actualPct())),f=p/100;
-  t.style.left=(6+86*f).toFixed(2)+"%";          /* center วิ่ง 6% → 92% เข้าเส้นชัย */
+  const cx=(6+86*f).toFixed(2)+"%";              /* center วิ่ง 6% → 92% เข้าเส้นชัย */
+  t.style.left=cx;
+  const pc=$("tkPct");if(pc)pc.style.left=cx;    /* ป้าย % เคลื่อนตามรถ */
   const fl=$("raceFill");if(fl)fl.style.width=(4+87*f).toFixed(2)+"%"; /* ไฟเรืองแสงบอกระยะที่วิ่งไปแล้ว */
   const pct=$("tkPct");if(pct)pct.textContent=p.toFixed(1)+"%";
   const done=p>=99.95;t.classList.toggle("done",done);
