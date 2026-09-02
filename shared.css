@@ -184,7 +184,7 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .scrim{position:fixed;inset:0;background:rgba(12,18,26,.5);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50}
 .scrim.on{opacity:1;pointer-events:auto}
 /* ===== Drawer = โทนสว่าง อ่านง่าย ตัวใหญ่ (override ตัวแปรสีเฉพาะในแผงนี้) ===== */
-.drawer{--panel:#ffffff;--panel2:#eef2f7;--ink:#18202c;--ink2:#556074;--ink3:#8892a0;--line:#e4e9f0;--line2:#c9d2dd;--grey:#9aa4b2;
+.drawer{--panel:#ffffff;--panel2:#eef2f7;--ink:#141c27;--ink2:#4d5768;--ink3:#8892a0;--line:#dbe2ea;--line2:#bcc6d3;--grey:#95a0ae;
   color-scheme:light;position:fixed;top:0;right:0;bottom:0;width:min(900px,97vw);background:#ffffff;color:var(--ink);box-shadow:-16px 0 50px rgba(8,16,28,.34);
   transform:translateX(102%);transition:transform .22s cubic-bezier(.4,0,.2,1);z-index:51;display:flex;flex-direction:column;border-left:1px solid var(--line2)}
 .drawer.on{transform:none}
@@ -210,6 +210,15 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .tasktbl input:focus,.tasktbl select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent);background:#fff}
 .tasktbl input.num{text-align:center;font-family:"IBM Plex Mono",monospace}
 .tn{min-width:210px}
+/* ล็อก = ข้อความ · แก้ได้ = กล่องไฮไลต์ฟ้า (คน & %) */
+.tasktbl .tval{font-size:15px;font-weight:600;color:var(--ink);line-height:1.35;padding:4px 2px}
+.tasktbl .lockval{font-size:15px;font-weight:600;color:#26303c;padding:9px 4px;white-space:nowrap}
+.tasktbl .lockval.num{text-align:center;font-family:"IBM Plex Mono",monospace}
+.tasktbl input.edit{border:2px solid var(--brand);background:#eafcff;color:#0e2b30;font-weight:700}
+.tasktbl input.edit:hover{border-color:var(--brand)}
+.tasktbl input.edit:focus{border-color:var(--brand2);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 30%,transparent);background:#fff}
+.prog input[type=range]{cursor:pointer}
+.drawer .addbtn{display:none}
 .wt-cell{font-size:14px;color:var(--ink2);text-align:right;white-space:nowrap;font-family:"IBM Plex Mono",monospace}
 .prog{display:flex;align-items:center;gap:10px}
 .prog input[type=range]{flex:1;height:8px;accent-color:var(--brand)}

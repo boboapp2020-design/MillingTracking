@@ -32,6 +32,7 @@ function openDrawer(mid){if(editPins)return;curMid=mid;const m=machineById(mid);
   const ow=$("dOwner");ow.value=m.owner||"";ow.oninput=()=>{m.owner=ow.value;scheduleSave();};
   renderTasks();$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
 function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;renderDiagram();}
+function dmy(serial){const s=isoOf(serial);if(!s)return "—";const p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
 function wtCell(t,m,total){if(manhour(t)===0)return '<span style="color:var(--amber)">—</span><br><span style="opacity:.55;font-size:10px">ยังไม่ระบุ</span>';
   return `<b>${taskWeightInJob(t,m).toFixed(1)}%</b><br><span style="opacity:.6;font-size:10px">รวม ${taskWeight(t,total).toFixed(2)}% · ${manhour(t)}h</span>`;}
 function miniHTML(m){const a=machineActual(m),mh=machineMandays(m);
@@ -39,21 +40,18 @@ function miniHTML(m){const a=machineActual(m),mh=machineMandays(m);
 function renderTasks(){const m=machineById(curMid);const total=totalMandays();
   $("dMini").innerHTML=miniHTML(m);
   $("taskBody").innerHTML=m.tasks.map((t,i)=>{const st=t.prog>=100?"done":(t.prog>0?"prog":"todo");
-    return `<tr data-i="${i}"><td class="tn"><input value="${escapeHtml(t.name)}" data-f="name">${t.note?`<div class="note-flag">⚑ ${escapeHtml(t.note)}</div>`:""}</td>
-      <td><input class="num" type="number" min="0" step="1" value="${t.days??""}" data-f="days"></td>
-      <td><input class="num" type="number" min="0" step="1" value="${t.labor??""}" data-f="labor"></td>
-      <td><input type="date" value="${isoOf(t.start)}" data-f="start"></td><td><input type="date" value="${isoOf(t.finish)}" data-f="finish"></td>
-      <td><div class="prog"><input type="range" min="0" max="100" step="5" value="${t.prog||0}" data-f="prog"><span class="pv" style="color:${STCOL[st]}">${t.prog||0}%</span></div></td>
-      <td class="wt-cell">${wtCell(t,m,total)}</td>
-      <td><button class="rm" data-rm="${i}" title="ลบงาน">🗑</button></td></tr>`;}).join("");
+    return `<tr data-i="${i}"><td class="tn"><div class="tval">${escapeHtml(t.name)}</div>${t.note?`<div class="note-flag">⚑ ${escapeHtml(t.note)}</div>`:""}</td>
+      <td><div class="lockval num">${t.days??"—"}</div></td>
+      <td><input class="num edit" type="number" min="0" step="1" value="${t.labor??""}" data-f="labor" inputmode="numeric" title="แก้ไขจำนวนคนได้"></td>
+      <td><div class="lockval">${dmy(t.start)}</div></td><td><div class="lockval">${dmy(t.finish)}</div></td>
+      <td><div class="prog"><input type="range" min="0" max="100" step="5" value="${t.prog||0}" data-f="prog" title="เลื่อนเพื่อระบุ % ความคืบหน้า"><span class="pv" style="color:${STCOL[st]}">${t.prog||0}%</span></div></td>
+      <td class="wt-cell">${wtCell(t,m,total)}</td></tr>`;}).join("");
   $("taskBody").querySelectorAll("tr").forEach(tr=>{const i=+tr.dataset.i;
     tr.querySelectorAll("[data-f]").forEach(inp=>{const f=inp.dataset.f;inp.addEventListener("input",()=>{const t=machineById(curMid).tasks[i];
-      if(f==="name")t.name=inp.value;else if(f==="days"||f==="labor")t[f]=inp.value===""?null:Math.max(0,+inp.value);
-      else if(f==="start"||f==="finish")t[f]=serialOfIso(inp.value);
+      if(f==="labor")t[f]=inp.value===""?null:Math.max(0,+inp.value);
       else if(f==="prog"){t.prog=+inp.value;const pv=tr.querySelector(".pv");pv.textContent=inp.value+"%";pv.style.color=(+inp.value>=100?"var(--green)":(+inp.value>0?"var(--amber)":"var(--grey)"));}
       if(f==="prog"){refreshMini();}else{refreshWeights();}
-      scheduleSave();});});
-    tr.querySelector("[data-rm]").addEventListener("click",()=>{machineById(curMid).tasks.splice(i,1);renderTasks();scheduleSave();});});}
+      scheduleSave();});});});}
 function refreshWeights(){const m=machineById(curMid);if(!m)return;const total=totalMandays();
   $("taskBody").querySelectorAll("tr").forEach(tr=>{const i=+tr.dataset.i;const t=m.tasks[i];if(t)tr.querySelector(".wt-cell").innerHTML=wtCell(t,m,total);});refreshMini();}
 function refreshMini(){const m=machineById(curMid);if(!m)return;$("dMini").innerHTML=miniHTML(m);

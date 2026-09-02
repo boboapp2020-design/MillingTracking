@@ -6,7 +6,7 @@
 <title>ระบบติดตามงานซ่อมลูกหีบ</title>
 <!-- ออฟไลน์ 100% : ไม่พึ่ง CDN / ฟอนต์ภายนอก · ภาพฝังแบบ data URI -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=10">
+<link rel="stylesheet" href="shared.css?v=11">
 </head>
 <body class="bgphoto">
 <header class="top">
@@ -79,12 +79,12 @@
       <thead><tr>
         <th class="tn">งาน (Task)</th><th style="width:50px">วัน</th><th style="width:50px">คน</th>
         <th style="width:94px">เริ่ม</th><th style="width:94px">แล้วเสร็จ</th>
-        <th style="width:148px">ความคืบหน้า</th><th style="width:78px" title="น้ำหนัก = man-hour · แถวบน = %ใน Job, แถวล่าง = %รวมทั้งโปรเจกต์">น้ำหนัก<br><span style="font-weight:400;opacity:.6">Job / รวม</span></th><th style="width:28px"></th>
+        <th style="width:148px">ความคืบหน้า</th><th style="width:78px" title="น้ำหนัก = man-hour · แถวบน = %ใน Job, แถวล่าง = %รวมทั้งโปรเจกต์">น้ำหนัก<br><span style="font-weight:400;opacity:.6">Job / รวม</span></th>
       </tr></thead>
       <tbody id="taskBody"></tbody>
     </table>
     <button class="addbtn" id="addTask">＋ เพิ่มงานใหม่</button>
-    <div class="hint" style="margin-top:10px">น้ำหนักงาน = จำนวนคน × จำนวนวัน (man-day และ % เทียบทั้งโปรเจกต์) · เลื่อนแถบเพื่อระบุ % ความคืบหน้า</div>
+    <div class="hint" style="margin-top:10px">✏️ กรอกได้เฉพาะ <b>จำนวนคน</b> และ <b>% ความคืบหน้า</b> · ที่เหลือ (ชื่องาน / วัน / วันที่) ล็อกตามแผน · น้ำหนัก = คน × วัน</div>
   </div>
   <div class="dfoot">
     <span class="hint" id="dFootHint"></span>
@@ -93,7 +93,7 @@
   </div>
 </aside>
 
-<script src="shared.js?v=9"></script>
-<script src="input.js?v=9"></script>
+<script src="shared.js?v=11"></script>
+<script src="input.js?v=11"></script>
 </body>
 </html>
