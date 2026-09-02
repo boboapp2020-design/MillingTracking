@@ -42,17 +42,13 @@ const STLABEL={done:"เสร็จแล้ว",prog:"กำลังทำ",t
 function renderTasks(){const m=machineById(curMid);
   $("dMini").innerHTML=miniHTML(m);
   $("taskBody").innerHTML=m.tasks.map((t,i)=>{const p=+t.prog||0;const st=p>=100?"done":(p>0?"prog":"todo");
-    const wj=manhour(t)===0?"—":taskWeightInJob(t,m).toFixed(1)+"%";
-    const meta=`<div class="tc-meta">⏱ ${t.days??"—"} วัน · ${dmy(t.start)} → ${dmy(t.finish)} · น้ำหนักใน Job <b class="tcw">${wj}</b></div>`;
     if(st==="done"){ // เสร็จแล้ว → ดูอย่างเดียว
       return `<div class="tcard done locked" data-i="${i}">
         <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-done">✓ เสร็จแล้ว · 100%</span></div>
-        ${meta}
         <div class="tc-ro"><span>👥 จำนวนคน: <b>${t.labor??"—"}</b></span><span>📝 หมายเหตุ: ${t.note?escapeHtml(t.note):"—"}</span><span class="ro-tag">🔒 ดูอย่างเดียว</span></div>
       </div>`;}
     return `<div class="tcard ${st}" data-i="${i}">
       <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-${st}">${STLABEL[st]} · ${p}%</span></div>
-      ${meta}
       <div class="tc-grid">
         <div class="tc-fld">
           <label>จำนวนคน</label>
@@ -82,7 +78,7 @@ function refreshWeights(){const m=machineById(curMid);if(!m)return;
 function refreshMini(){const m=machineById(curMid);if(!m)return;$("dMini").innerHTML=miniHTML(m);
   $("dTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');}
 $("dClose").addEventListener("click",closeDrawer);$("scrim").addEventListener("click",closeDrawer);$("dDone").addEventListener("click",closeDrawer);
-$("dReset").addEventListener("click",()=>{if(!confirm("คืนค่าเครื่องนี้กลับเป็นข้อมูลตั้งต้นจาก Excel?"))return;const fresh=freshFromSeed();const fm=fresh.groups.flatMap(g=>g.machines).find(x=>x.id===curMid);const m=machineById(curMid);if(fm){m.tasks=fm.tasks;renderTasks();scheduleSave();}});
+$("dReset").addEventListener("click",closeDrawer); // ปุ่มยกเลิก = ปิดหน้าต่าง
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("drawer").classList.contains("on"))closeDrawer();});
 
 function render(){renderRace();renderDiagram();}

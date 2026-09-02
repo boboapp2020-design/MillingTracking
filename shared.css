@@ -264,14 +264,7 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .tasktbl input.edit{border:2.5px solid var(--brand);background:#fff;color:#0b2a2f;font-weight:800;font-size:19px;padding:12px 6px;box-shadow:0 3px 8px rgba(40,214,234,.30)}
 .tasktbl input.edit:hover{border-color:var(--brand2)}
 .tasktbl input.edit:focus{border-color:var(--brand2);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 34%,transparent);background:#fff}
-.prog{gap:12px}
-.prog input[type=range]{height:10px;cursor:pointer}
-.prog .pv{flex:0 0 52px;font-size:18px;font-weight:800}
 .drawer .addbtn{display:none}
-.wt-cell{font-size:14px;color:var(--ink2);text-align:right;white-space:nowrap;font-family:"IBM Plex Mono",monospace}
-.prog{display:flex;align-items:center;gap:10px}
-.prog input[type=range]{flex:1;height:8px;accent-color:var(--brand)}
-.prog .pv{flex:0 0 46px;text-align:right;font-weight:700;font-size:16px;font-family:"IBM Plex Mono",monospace}
 .rm{border:none;background:transparent;color:var(--grey);font-size:19px;padding:4px 8px;border-radius:7px}
 .rm:hover{color:var(--red);background:color-mix(in srgb,var(--red) 12%,transparent)}
 .note-flag{color:var(--amber);font-size:13px;margin-top:3px}
