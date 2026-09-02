@@ -92,7 +92,13 @@ function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=ne
     for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const nine=!off&&dt.getDay()>=1&&dt.getDay()<=5&&weekSatOff(dt);const cls=["cald"];if(off)cls.push("off");else if(nine)cls.push("h9");if(MS.has(ser))cls.push("ms");const mk=off?(dt.getDay()===0?"หยุด":"หยุด ส."):(nine?"9 ชม.":"");cells+=`<div class="${cls.join(" ")}"><div class="dn">${d}</div><div class="mk">${mk}</div></div>`;}
     return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");}
 
-function render(){renderPeriodBar();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
+function renderRace(){const p=Math.max(0,Math.min(100,actualPct()));const t=$("truck"),f=$("raceFill");if(!t)return;
+  t.style.left="calc((100% - 90px) * "+(p/100).toFixed(4)+")";
+  if(f)f.style.width=p.toFixed(2)+"%";
+  const pct=$("tkPct");if(pct)pct.textContent=p.toFixed(1)+"%";
+  const done=p>=99.95;t.classList.toggle("done",done);
+  const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":"วิ่งไปแล้ว "+p.toFixed(0)+"% ของเส้นชัย";}
+function render(){renderPeriodBar();renderRace();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
 function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderGroups();renderAlerts();}
 async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();}
 async function loadSnaps(){const raw=await fetchSnapshots();if(!raw)return null;return raw.map(s=>({serial:serialOfDMY(s.date),overall:s.overall,plan:s.plan}));}
