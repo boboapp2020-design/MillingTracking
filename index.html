@@ -6,7 +6,7 @@
 <title>ระบบติดตามงานซ่อมลูกหีบ</title>
 <!-- ออฟไลน์ 100% : ไม่พึ่ง CDN / ฟอนต์ภายนอก · ภาพฝังแบบ data URI -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=12">
+<link rel="stylesheet" href="shared.css?v=13">
 </head>
 <body class="bgphoto">
 <header class="top">
@@ -67,33 +67,24 @@
 </div></div>
 
 <div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-hidden="true">
+<aside class="drawer modal" id="drawer" aria-hidden="true" role="dialog" aria-modal="true">
   <div class="dhead">
     <div><div class="dt" id="dTitle">—</div><div class="ds" id="dSub">—</div></div>
-    <button class="xbtn" id="dClose">✕</button>
+    <button class="xbtn" id="dClose" title="ปิด">✕</button>
   </div>
-  <div class="owner-row"><label>ผู้รับผิดชอบ</label><input id="dOwner" placeholder="ชื่อหน่วยงาน/ผู้รับผิดชอบ…"></div>
-  <div class="dmini" id="dMini"></div>
   <div class="dbody">
-    <table class="tasktbl">
-      <thead><tr>
-        <th class="tn">งาน (Task)</th><th style="width:52px">วัน</th><th style="width:78px" class="edhead">คน ✏️</th>
-        <th style="width:96px">เริ่ม</th><th style="width:96px">แล้วเสร็จ</th>
-        <th style="width:180px" class="edhead">ความคืบหน้า ✏️</th><th style="width:78px" title="น้ำหนัก = man-hour · แถวบน = %ใน Job, แถวล่าง = %รวมทั้งโปรเจกต์">น้ำหนัก<br><span style="font-weight:400;opacity:.6">Job / รวม</span></th>
-      </tr></thead>
-      <tbody id="taskBody"></tbody>
-    </table>
-    <button class="addbtn" id="addTask">＋ เพิ่มงานใหม่</button>
-    <div class="hint" style="margin-top:10px">✏️ กรอกได้เฉพาะ <b>จำนวนคน</b> และ <b>% ความคืบหน้า</b> · ที่เหลือ (ชื่องาน / วัน / วันที่) ล็อกตามแผน · น้ำหนัก = คน × วัน</div>
+    <div class="owner-row"><label>ผู้รับผิดชอบ</label><input id="dOwner" placeholder="ชื่อหน่วยงาน/ผู้รับผิดชอบ…"></div>
+    <div class="dmini" id="dMini"></div>
+    <div class="tips">✏️ กรอกได้เฉพาะ <b>จำนวนคน</b> · <b>% ความคืบหน้า</b> · <b>หมายเหตุ</b> — ที่เหลือล็อกตามแผน</div>
+    <div id="taskBody" class="tcards"></div>
   </div>
   <div class="dfoot">
-    <span class="hint" id="dFootHint"></span>
-    <button class="tbtn" id="dReset" style="margin-left:auto">คืนค่าเดิม</button>
-    <button class="tbtn pri" id="dDone">เสร็จสิ้น</button>
+    <button class="tbtn" id="dReset">คืนค่าเดิม</button>
+    <button class="tbtn pri big" id="dDone">✓ บันทึก / เสร็จสิ้น</button>
   </div>
 </aside>
 
-<script src="shared.js?v=12"></script>
-<script src="input.js?v=12"></script>
+<script src="shared.js?v=13"></script>
+<script src="input.js?v=13"></script>
 </body>
 </html>

@@ -91,7 +91,39 @@ function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=ne
     for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const nine=!off&&dt.getDay()>=1&&dt.getDay()<=5&&weekSatOff(dt);const cls=["cald"];if(off)cls.push("off");else if(nine)cls.push("h9");if(MS.has(ser))cls.push("ms");const mk=off?(dt.getDay()===0?"หยุด":"หยุด ส."):(nine?"9 ชม.":"");cells+=`<div class="${cls.join(" ")}"><div class="dn">${d}</div><div class="mk">${mk}</div></div>`;}
     return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");}
 
-function render(){renderPeriodBar();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
+function addWork(start,n){let s=start,cnt=0,guard=0;const need=Math.ceil(n);if(need<=0)return start;while(cnt<need&&guard<3000){s++;guard++;if(!isHoliday(sd(s)))cnt++;}return s;}
+function renderForecast(){const el=$("forecast");if(!el)return;const rng=projectRange(),s0=rng.min,s1=rng.max;
+  const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),spi=plan>0?act/plan:1;
+  const base=Math.min(Math.max(TODAY_SERIAL,s0),s1);const elapsed=workingSerials(s0,base).length;
+  const totalWork=Math.max(1,workingSerials(s0,s1).length);
+  const remainPlanWork=Math.max(1,workingSerials(base,s1).length);
+  const minElapsed=Math.max(5,Math.round(totalWork*0.2)); // ต้องมีข้อมูลพอก่อนจึงคาดวันได้แม่น
+  const reqRate=(100-act)/remainPlanWork; // ต้องทำ %/วันทำงาน ที่เหลือ เพื่อทันแผน
+  let cls,icon,verdict,sub,projDate;
+  if(act>=99.95){cls="ok";icon="🎉";verdict="งานซ่อมเสร็จครบ 100% แล้ว";sub="ปิดงานเรียบร้อยตามเป้าหมาย";projDate=fmtTH(base);}
+  else if(act<=0.1||elapsed<=0){cls="wait";icon="⏳";verdict="ยังไม่เริ่มงาน / ยังไม่มีข้อมูล";sub="เริ่มบันทึก % ความคืบหน้าเพื่อคาดการณ์วันเสร็จ";projDate="—";}
+  else if(elapsed<minElapsed||act<10){ // ช่วงเริ่มต้น/ข้อมูลน้อย: ประเมินจาก SPI ยังไม่ฟันธงวันเสร็จ
+    const onpace=spi>=0.95;cls=onpace?"ok":(spi>=0.8?"warn":"late");icon=onpace?"🟢":(spi>=0.8?"🟡":"🔴");
+    verdict=onpace?"เริ่มต้นได้ตามแผน":(spi>=0.8?"เริ่มต้นช้ากว่าแผนเล็กน้อย":"ตอนนี้ช้ากว่าแผน");
+    sub=`ผ่านไป ${elapsed}/${totalWork} วันทำงาน · ทำได้ ${act.toFixed(1)}% (แผน ${plan.toFixed(1)}%) · SPI ${spi.toFixed(2)} — ต้องทำเฉลี่ย ${reqRate.toFixed(2)}%/วันจึงจะทันกำหนด`;projDate="—";}
+  else{const rate=act/elapsed,remain=100-act,need=remain/rate,projSerial=addWork(base,need);
+    const capW=totalWork*2; const capped=(workingSerials(base,projSerial).length>capW);
+    projDate=capped?("หลัง "+fmtTH(s1)):fmtTH(projSerial);
+    if(projSerial<=s1){cls="ok";icon="🟢";const ahead=Math.max(0,workingSerials(projSerial,s1).length-1);
+      verdict="คาดว่าเสร็จทันกำหนด";sub=(ahead>0?`เร็วกว่ากำหนด ~${ahead} วันทำงาน · `:`พอดีกำหนด · `)+`ความเร็วเฉลี่ย ${rate.toFixed(2)}%/วันทำงาน`;}
+    else{const lateW=Math.max(1,workingSerials(s1,projSerial).length-1);
+      if(lateW<=3){cls="warn";icon="🟡";verdict=`เสี่ยงเลยกำหนด ~${lateW} วันทำงาน — ต้องเร่ง`;}
+      else{cls="late";icon="🔴";verdict=capped?"คาดว่าล่าช้ากว่าแผนมาก หากคงอัตราปัจจุบัน":`คาดว่าล่าช้ากว่าแผน ~${lateW} วันทำงาน`;}
+      sub=`ต้องเร่งความเร็วเป็น ${reqRate.toFixed(2)}%/วัน (ปัจจุบัน ${rate.toFixed(2)}%/วัน)`;}}
+  el.innerHTML=`<div class="fc ${cls}"><div class="fc-ic">${icon}</div>
+    <div class="fc-main"><div class="fc-lab">ประเมินกำหนดเสร็จ · Completion Forecast</div><div class="fc-verdict">${verdict}</div><div class="fc-sub">${sub}</div></div>
+    <div class="fc-stats">
+      <div><span>คาดว่าเสร็จ</span><b class="${cls==='late'?'r':(cls==='warn'?'a':'g')}">${projDate}</b></div>
+      <div><span>กำหนดตามแผน</span><b>${fmtTH(s1)}</b></div>
+      <div><span>จริง / แผน</span><b>${act.toFixed(1)}% / ${plan.toFixed(1)}%</b></div>
+      <div><span>SPI</span><b class="${spi>=1?'g':(spi>=.9?'a':'r')}">${spi.toFixed(2)}</b></div>
+    </div></div>`;}
+function render(){renderPeriodBar();renderForecast();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
 function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderGroups();renderAlerts();}
 async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();}
 async function loadSnaps(){const raw=await fetchSnapshots();if(!raw)return null;return raw.map(s=>({serial:serialOfDMY(s.date),overall:s.overall,plan:s.plan}));}
