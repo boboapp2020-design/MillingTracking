@@ -76,11 +76,13 @@ function wireCommon(){
 
 /* ---- Google Sheet sync (Apps Script backend) — URL ฝังไว้ถาวร ผู้ใช้แก้ไม่ได้ ---- */
 const SYNC_URL="https://script.google.com/macros/s/AKfycbwz5JC3AsGW4SRS-suhTRwFi4Z1jQDV5VT1t7laGr08aoj8EFrXDmLxVr4dXxbcBnHU/exec";
+const SYNC_KEY="mlk_7Qx2F9pR4vT8nZ6bW3sK";   // ต้องตรงกับ SECRET ใน Code.gs
 let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;
+function syncGet(extra){return syncUrl+"?key="+encodeURIComponent(SYNC_KEY)+(extra?"&"+extra:"")+"&t="+Date.now();}
 function setSyncBtn(state,msg){const b=$("btnSync");if(!b)return;const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
 function schedulePush(){if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1500);}
 async function pushRemote(){if(!syncUrl)return;setSyncBtn("busy");
-  try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA})});
+  try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})});
     const j=await res.json();if(j&&j.ok){lastSync=new Date();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}else setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ");
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้ · ข้อมูลถูกเก็บในเครื่องแล้ว");}
 }
@@ -90,15 +92,15 @@ async function saveSnapshot(){
   const now=new Date();const ds=String(now.getDate()).padStart(2,"0")+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+now.getFullYear();
   const snap={date:ds,time:now.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}),overall:+actualPct().toFixed(2),plan:+planPctUpTo(TODAY_SERIAL).toFixed(2),jobs:js};
   const btn=$("btnSnap");const old=btn?btn.textContent:"";if(btn)btn.textContent="⏳ กำลังบันทึก…";
-  try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"snapshot",snapshot:snap})});
+  try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"snapshot",snapshot:snap,key:SYNC_KEY})});
     const j=await res.json();
     if(j&&j.ok){if(btn){btn.textContent="✅ บันทึกแล้ว";setTimeout(()=>btn.textContent=old,2500);}alert("บันทึก Snapshot วันที่ "+ds+" ลงชีทแล้ว\n%รวม = "+snap.overall+"% · ตามแผน = "+snap.plan+"%");}
     else{if(btn)btn.textContent=old;alert("บันทึกไม่สำเร็จ: "+((j&&j.error)||"ไม่ทราบสาเหตุ"));}
   }catch(e){if(btn)btn.textContent=old;alert("เชื่อมต่ออินเทอร์เน็ตไม่ได้");}
 }
-async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetch(syncUrl+(syncUrl.includes("?")?"&":"?")+"snap=1&t="+Date.now());const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
+async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetch(syncGet("snap=1"));const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
 async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
-  try{const res=await fetch(syncUrl+(syncUrl.includes("?")?"&":"?")+"t="+Date.now());const j=await res.json();
+  try{const res=await fetch(syncGet());const j=await res.json();
     if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;const localT=DATA.updated||0,remoteT=remote.updated||0;const localFresh=WAS_SEED;
       if(remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=remote;save();render();}
       lastSync=new Date();setSyncBtn("ok","ดึงข้อมูลจากชีทแล้ว "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));return true;}
@@ -109,5 +111,12 @@ function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
   const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); await pullRemote(); });  // คลิก = ดึงข้อมูลล่าสุดจากชีท (ไม่มี prompt แก้ URL)
 }
+/* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
+const DESIGN_W=1340;
+function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;const s=Math.min(1,vw/DESIGN_W);const w=$("appWrap");
+  if(s>=0.999){app.style.transform="none";if(w)w.style.height="";}
+  else{app.style.transform="scale("+s+")";if(w)w.style.height=app.getBoundingClientRect().height+"px";}}
+function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout(window._fit);window._fit=setTimeout(fitPage,60);});window.addEventListener("load",fitPage);
+  try{new ResizeObserver(()=>fitPage()).observe($("app"));}catch(e){}}
 /* boot — call after the page defines render() */
-function boot(){wireCommon();wireSync();render();save();setSyncBtn("busy");pullRemote(true).finally(()=>{syncReady=true;});}
+function boot(){wireCommon();wireSync();render();save();setupFit();setSyncBtn("busy");pullRemote(true).finally(()=>{syncReady=true;});}

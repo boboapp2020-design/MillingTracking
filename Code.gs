@@ -22,7 +22,17 @@
 var STATE_SHEET = '_state';
 var TABLE_SHEET = 'ชีต1';
 
+/* กุญแจลับ — ต้องตรงกับ SYNC_KEY ใน shared.js ทุกคำขอที่ไม่มี key ที่ถูกต้องจะถูกปฏิเสธ
+   เปลี่ยนได้: ตั้งค่าใหม่ตรงนี้ แล้วแก้ SYNC_KEY ใน shared.js ให้ตรงกัน */
+var SECRET = 'mlk_7Qx2F9pR4vT8nZ6bW3sK';
+
+function authorized_(e, body) {
+  var k = (body && body.key) || (e && e.parameter && e.parameter.key) || '';
+  return k === SECRET;
+}
+
 function doGet(e) {
+  if (!authorized_(e, null)) return json_({ ok: false, error: 'unauthorized' });
   if (e && e.parameter && e.parameter.snap) return json_({ ok: true, snapshots: readSnapshots_() });
   return json_({ ok: true, data: getState_() });
 }
@@ -38,6 +48,7 @@ function readSnapshots_() {
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
+    if (!authorized_(e, body)) return json_({ ok: false, error: 'unauthorized' });
     if (body && body.action === 'snapshot' && body.snapshot) {
       appendSnapshot_(body.snapshot);
       return json_({ ok: true, savedAt: new Date().toISOString() });
