@@ -29,6 +29,10 @@ function doGet(e) {
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
+    if (body && body.action === 'snapshot' && body.snapshot) {
+      appendSnapshot_(body.snapshot);
+      return json_({ ok: true, savedAt: new Date().toISOString() });
+    }
     if (body && body.data && body.data.groups) {
       setState_(body.data);
       writeTable_(body.data);
@@ -37,6 +41,33 @@ function doPost(e) {
     return json_({ ok: false, error: 'invalid payload' });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
+  }
+}
+
+function appendSnapshot_(s) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Snapshot');
+  var jobs = s.jobs || [];
+  var header = ['วันที่', 'เวลา', '% รวม (จริง)', '% ตามแผน'].concat(jobs.map(function (j) { return j.name; }));
+  if (!sh) {
+    sh = ss.insertSheet('Snapshot');
+    sh.getRange(1, 1, 1, header.length).setValues([header])
+      .setFontWeight('bold').setBackground('#12a150').setFontColor('#ffffff');
+    sh.setFrozenRows(1);
+  }
+  var row = [s.date, s.time, s.overall / 100, s.plan / 100]
+    .concat(jobs.map(function (j) { return j.pct / 100; }));
+  var last = sh.getLastRow();
+  var target = last + 1;                       // upsert: same date → overwrite, else append
+  if (last >= 2) {
+    var dates = sh.getRange(2, 1, last - 1, 1).getValues();
+    for (var i = 0; i < dates.length; i++) {
+      if (String(dates[i][0]) === String(s.date)) { target = i + 2; break; }
+    }
+  }
+  sh.getRange(target, 1, 1, row.length).setValues([row]);
+  if (sh.getLastRow() >= 2) {
+    sh.getRange(2, 3, sh.getLastRow() - 1, 2 + jobs.length).setNumberFormat('0.00%');
   }
 }
 
