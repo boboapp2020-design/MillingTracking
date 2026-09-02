@@ -63,7 +63,7 @@ $("dClose").addEventListener("click",closeDrawer);$("scrim").addEventListener("c
 $("dReset").addEventListener("click",()=>{if(!confirm("คืนค่าเครื่องนี้กลับเป็นข้อมูลตั้งต้นจาก Excel?"))return;const fresh=freshFromSeed();const fm=fresh.groups.flatMap(g=>g.machines).find(x=>x.id===curMid);const m=machineById(curMid);if(fm){m.tasks=fm.tasks;renderTasks();scheduleSave();}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("drawer").classList.contains("on"))closeDrawer();});
 
-function render(){renderDiagram();}
+function render(){renderRace();renderDiagram();}
 function onThemeChange(){renderDiagram();}
 function onSyncConnected(){renderDiagram();}
 boot();

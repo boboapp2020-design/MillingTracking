@@ -111,6 +111,14 @@ function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
   const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); await pullRemote(); });  // คลิก = ดึงข้อมูลล่าสุดจากชีท (ไม่มี prompt แก้ URL)
 }
+/* ---- cane-truck race: วิ่งตาม % งานซ่อมรวมทั้งแผนก เข้าเส้นชัยที่ 100% ---- */
+function renderRace(){const t=$("truck");if(!t)return;const p=Math.max(0,Math.min(100,actualPct()));const f=$("raceFill");
+  t.style.left="calc((100% - 90px) * "+(p/100).toFixed(4)+")";
+  if(f)f.style.width=p.toFixed(2)+"%";
+  const pct=$("tkPct");if(pct)pct.textContent=p.toFixed(1)+"%";
+  const done=p>=99.95;t.classList.toggle("done",done);
+  const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":"วิ่งไปแล้ว "+p.toFixed(0)+"% ของเส้นชัย";}
+
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
 const DESIGN_W=1340;
 function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;const s=Math.min(1,vw/DESIGN_W);const w=$("appWrap");

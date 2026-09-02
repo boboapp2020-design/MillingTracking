@@ -222,6 +222,18 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 
 footer{max-width:1340px;margin:0 auto;padding:14px 20px 34px;color:var(--ink3);font-size:11.5px;text-align:center}
 
+/* ===== Cane-truck race (ความคืบหน้ารวม → เส้นชัย) ใช้ได้ทั้ง 2 หน้า ===== */
+.race-card{padding:16px 18px;margin-bottom:16px}
+.race{position:relative;height:74px;margin-top:6px}
+.rtrack{position:absolute;left:0;right:32px;top:48px;height:12px;border-radius:6px;background:var(--panel2);border:1px solid var(--line2);overflow:hidden}
+.rtrack::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 16px,var(--line2) 16px 26px);opacity:.4}
+.rfill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--brand),var(--green));transition:width 1.6s cubic-bezier(.34,1,.4,1);z-index:1}
+.rflag{position:absolute;right:2px;top:-2px}
+.truck{position:absolute;bottom:12px;left:0;transition:left 1.6s cubic-bezier(.34,1,.4,1);z-index:3}
+.tkpct{position:absolute;left:50%;top:-13px;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:1px 6px;white-space:nowrap;box-shadow:var(--shadow)}
+.truck.done svg{animation:bump .6s ease 1}
+@keyframes bump{0%,100%{transform:translateY(0)}45%{transform:translateY(-6px)}}
+
 /* ===== Lock ratio: เลย์เอาต์เดสก์ท็อปคงสัดส่วน ย่อทั้งหน้าให้พอดีจอทุกอุปกรณ์ ===== */
 #appWrap{overflow:hidden;width:100%}
 #app{width:1340px;margin:0 auto;transform-origin:top left}
