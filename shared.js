@@ -120,10 +120,12 @@ function renderRace(){const t=$("truck");if(!t)return;const p=Math.max(0,Math.mi
   const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":"วิ่งไปแล้ว "+p.toFixed(0)+"% ของเส้นชัย";}
 
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
-const DESIGN_W=1340;
-function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;const s=Math.min(1,vw/DESIGN_W);const w=$("appWrap");
-  if(s>=0.999){app.style.transform="none";if(w)w.style.height="";}
-  else{app.style.transform="scale("+s+")";if(w)w.style.height=app.getBoundingClientRect().height+"px";}}
+const DESIGN_W=1340, MAX_SCALE=1.7;
+function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;
+  let s=Math.min(MAX_SCALE, vw/DESIGN_W);
+  app.style.transform="scale("+s.toFixed(4)+")";
+  app.style.marginLeft=Math.max(0,(vw-DESIGN_W*s)/2)+"px";
+  const w=$("appWrap");if(w)w.style.height=app.getBoundingClientRect().height+"px";}
 function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout(window._fit);window._fit=setTimeout(fitPage,60);});window.addEventListener("load",fitPage);
   try{new ResizeObserver(()=>fitPage()).observe($("app"));}catch(e){}}
 /* boot — call after the page defines render() */
