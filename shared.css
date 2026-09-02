@@ -106,11 +106,11 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .hero-frame .race2{position:absolute;top:8px;left:18px;right:18px;height:114px;z-index:6;pointer-events:none;background:transparent;overflow:visible}
 .pinlayer{position:absolute;inset:0;z-index:4}
 .pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:4}
-.pin .dot{--p:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative;
-  background:conic-gradient(var(--pc) calc(var(--p)*1%),color-mix(in srgb,var(--pc) 24%,#ffffff) 0);
-  box-shadow:0 2px 8px rgba(10,20,35,.35);transition:transform .13s}
-.pin .dot i{width:31px;height:31px;border-radius:50%;background:var(--panel);display:grid;place-items:center;
-  font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--ink);font-style:normal;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pc) 40%,transparent)}
+.pin .dot{--p:0;width:60px;height:60px;border-radius:50%;display:grid;place-items:center;position:relative;
+  background:linear-gradient(180deg,#9ba2ac,#6d7480);
+  box-shadow:0 4px 13px rgba(10,20,35,.5);transition:transform .13s}
+.pin .dot i{width:46px;height:46px;border-radius:50%;background:#eef1f5;display:grid;place-items:center;
+  font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:700;color:#2b3139;font-style:normal;box-shadow:inset 0 0 0 1.5px rgba(120,128,140,.45)}
 .pin:hover .dot{transform:scale(1.12)}
 .pin.prog .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--pc);opacity:.5;animation:pulse 2s ease-out infinite}
 @keyframes pulse{0%{transform:scale(.9);opacity:.65}100%{transform:scale(1.5);opacity:0}}
@@ -214,10 +214,15 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .tasktbl .tval{font-size:15px;font-weight:600;color:var(--ink);line-height:1.35;padding:4px 2px}
 .tasktbl .lockval{font-size:15px;font-weight:600;color:#26303c;padding:9px 4px;white-space:nowrap}
 .tasktbl .lockval.num{text-align:center;font-family:"IBM Plex Mono",monospace}
-.tasktbl input.edit{border:2px solid var(--brand);background:#eafcff;color:#0e2b30;font-weight:700}
-.tasktbl input.edit:hover{border-color:var(--brand)}
-.tasktbl input.edit:focus{border-color:var(--brand2);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 30%,transparent);background:#fff}
-.prog input[type=range]{cursor:pointer}
+.tasktbl th.edhead{color:var(--brand2);font-weight:800}
+.tasktbl td.edcell{background:color-mix(in srgb,var(--brand) 10%,#fff);box-shadow:inset 1px 0 0 color-mix(in srgb,var(--brand) 30%,transparent),inset -1px 0 0 color-mix(in srgb,var(--brand) 30%,transparent)}
+.tasktbl tr:hover td.edcell{background:color-mix(in srgb,var(--brand) 15%,#fff)}
+.tasktbl input.edit{border:2.5px solid var(--brand);background:#fff;color:#0b2a2f;font-weight:800;font-size:19px;padding:12px 6px;box-shadow:0 3px 8px rgba(40,214,234,.30)}
+.tasktbl input.edit:hover{border-color:var(--brand2)}
+.tasktbl input.edit:focus{border-color:var(--brand2);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 34%,transparent);background:#fff}
+.prog{gap:12px}
+.prog input[type=range]{height:10px;cursor:pointer}
+.prog .pv{flex:0 0 52px;font-size:18px;font-weight:800}
 .drawer .addbtn{display:none}
 .wt-cell{font-size:14px;color:var(--ink2);text-align:right;white-space:nowrap;font-family:"IBM Plex Mono",monospace}
 .prog{display:flex;align-items:center;gap:10px}

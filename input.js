@@ -5,7 +5,7 @@ function renderDiagram(){
   const html=Object.keys(DATA.pins).map(id=>{const m=machineById(id);if(!m)return"";const a=machineActual(m);const st=machineStatus(m);const col=STCOL[st];const pos=DATA.pins[id];
     const num=/^m[1-5]$/.test(id)?id.replace("m",""):(id==="mr"?"R":"·");
     const label=m.name.replace("ลูกหีบ ชุดที่","ลูกหีบ").replace("ตะแกรง ","");
-    return `<div class="pin ${st==='prog'?'prog':''}" data-mid="${id}" style="left:${pos.x}%;top:${pos.y}%;--pc:${col}">
+    return `<div class="pin ${st==='prog'?'prog':''}" data-mid="${id}" style="left:${pos.x}%;top:${pos.y}%;--pc:#8b929d">
       <div class="dot" style="--p:${a.localPct.toFixed(0)}"><i>${num}</i></div>
       <div class="plabel">${label} ${st==='done'?'<b class="succ">✓ Success 100%</b>':`<small>${a.localPct.toFixed(0)}%</small>`}</div></div>`;}).join("");
   const STATIC=[{t:"Mixed Juice Tank",x:48,y:72},{t:"หม้อไอน้ำ (Boiler)",x:96,y:44}];
@@ -22,7 +22,7 @@ function makeDraggable(pin){
     const up=()=>{pin.removeEventListener("pointermove",move);pin.removeEventListener("pointerup",up);scheduleSave();};
     pin.addEventListener("pointermove",move);pin.addEventListener("pointerup",up);});
 }
-$("btnEditPins").addEventListener("click",()=>{editPins=!editPins;$("btnEditPins").classList.toggle("pri",editPins);$("btnEditPins").innerHTML=editPins?"✔ เสร็จ":"🎯 จัดตำแหน่งหมุด";$("editNote").style.display=editPins?"block":"none";renderDiagram();});
+{const _bep=$("btnEditPins");if(_bep)_bep.addEventListener("click",()=>{editPins=!editPins;_bep.classList.toggle("pri",editPins);_bep.innerHTML=editPins?"✔ เสร็จ":"🎯 จัดตำแหน่งหมุด";const en=$("editNote");if(en)en.style.display=editPins?"block":"none";renderDiagram();});}
 $("resetPins").addEventListener("click",e=>{e.preventDefault();if(!confirm("รีเซ็ตตำแหน่งหมุดทั้งหมดกลับเป็นค่ามาตรฐาน?"))return;DATA.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));renderDiagram();scheduleSave();});
 
 /* drawer / form */
@@ -42,9 +42,9 @@ function renderTasks(){const m=machineById(curMid);const total=totalMandays();
   $("taskBody").innerHTML=m.tasks.map((t,i)=>{const st=t.prog>=100?"done":(t.prog>0?"prog":"todo");
     return `<tr data-i="${i}"><td class="tn"><div class="tval">${escapeHtml(t.name)}</div>${t.note?`<div class="note-flag">⚑ ${escapeHtml(t.note)}</div>`:""}</td>
       <td><div class="lockval num">${t.days??"—"}</div></td>
-      <td><input class="num edit" type="number" min="0" step="1" value="${t.labor??""}" data-f="labor" inputmode="numeric" title="แก้ไขจำนวนคนได้"></td>
+      <td class="edcell"><input class="num edit" type="number" min="0" step="1" value="${t.labor??""}" data-f="labor" inputmode="numeric" title="แก้ไขจำนวนคนได้"></td>
       <td><div class="lockval">${dmy(t.start)}</div></td><td><div class="lockval">${dmy(t.finish)}</div></td>
-      <td><div class="prog"><input type="range" min="0" max="100" step="5" value="${t.prog||0}" data-f="prog" title="เลื่อนเพื่อระบุ % ความคืบหน้า"><span class="pv" style="color:${STCOL[st]}">${t.prog||0}%</span></div></td>
+      <td class="edcell"><div class="prog"><input type="range" min="0" max="100" step="5" value="${t.prog||0}" data-f="prog" title="เลื่อนเพื่อระบุ % ความคืบหน้า"><span class="pv" style="color:${STCOL[st]}">${t.prog||0}%</span></div></td>
       <td class="wt-cell">${wtCell(t,m,total)}</td></tr>`;}).join("");
   $("taskBody").querySelectorAll("tr").forEach(tr=>{const i=+tr.dataset.i;
     tr.querySelectorAll("[data-f]").forEach(inp=>{const f=inp.dataset.f;inp.addEventListener("input",()=>{const t=machineById(curMid).tasks[i];

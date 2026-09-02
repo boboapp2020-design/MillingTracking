@@ -6,7 +6,7 @@
 <title>ระบบติดตามงานซ่อมลูกหีบ</title>
 <!-- ออฟไลน์ 100% : ไม่พึ่ง CDN / ฟอนต์ภายนอก · ภาพฝังแบบ data URI -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=11">
+<link rel="stylesheet" href="shared.css?v=12">
 </head>
 <body class="bgphoto">
 <header class="top">
@@ -34,7 +34,7 @@
     <div class="hero-head">
       <div class="sec-ic"></div>
       <h2>แผนผังสถานีหีบอ้อย — คลิกที่เครื่องจักรเพื่อกรอกข้อมูล</h2>
-      <div class="hero-tools"><span class="pill" id="raceHint" style="margin-right:8px"></span><button class="tbtn" id="btnEditPins">จัดตำแหน่งหมุด</button></div>
+      <div class="hero-tools"><span class="pill" id="raceHint"></span></div>
     </div>
     <div class="hero-frame" id="heroFrame">
       <img class="hero-img" id="heroImg" alt="แผนผังกระบวนการหีบอ้อย" src="milling.png">
@@ -77,9 +77,9 @@
   <div class="dbody">
     <table class="tasktbl">
       <thead><tr>
-        <th class="tn">งาน (Task)</th><th style="width:50px">วัน</th><th style="width:50px">คน</th>
-        <th style="width:94px">เริ่ม</th><th style="width:94px">แล้วเสร็จ</th>
-        <th style="width:148px">ความคืบหน้า</th><th style="width:78px" title="น้ำหนัก = man-hour · แถวบน = %ใน Job, แถวล่าง = %รวมทั้งโปรเจกต์">น้ำหนัก<br><span style="font-weight:400;opacity:.6">Job / รวม</span></th>
+        <th class="tn">งาน (Task)</th><th style="width:52px">วัน</th><th style="width:78px" class="edhead">คน ✏️</th>
+        <th style="width:96px">เริ่ม</th><th style="width:96px">แล้วเสร็จ</th>
+        <th style="width:180px" class="edhead">ความคืบหน้า ✏️</th><th style="width:78px" title="น้ำหนัก = man-hour · แถวบน = %ใน Job, แถวล่าง = %รวมทั้งโปรเจกต์">น้ำหนัก<br><span style="font-weight:400;opacity:.6">Job / รวม</span></th>
       </tr></thead>
       <tbody id="taskBody"></tbody>
     </table>
@@ -93,7 +93,7 @@
   </div>
 </aside>
 
-<script src="shared.js?v=11"></script>
-<script src="input.js?v=11"></script>
+<script src="shared.js?v=12"></script>
+<script src="input.js?v=12"></script>
 </body>
 </html>
