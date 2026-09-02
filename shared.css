@@ -38,7 +38,7 @@ button{font-family:inherit;cursor:pointer}
 
 /* header */
 header.top{position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line2)}
-.top-in{max-width:1340px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top-in{max-width:none;margin:0;padding:11px 26px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px;margin-right:auto}
 .logo{width:40px;height:40px;border-radius:9px;background:var(--brand);display:grid;place-items:center;color:#fff;
   font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px;letter-spacing:.5px;flex:0 0 auto}

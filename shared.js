@@ -128,7 +128,8 @@ function fitPage(){const app=$("app");if(!app)return;const vw=document.documentE
   let s=Math.min(MAX_SCALE, vw/DESIGN_W);
   if($("heroFrame")){ // หน้าแรก: fit ให้พอดีจอทั้งกว้างและสูง (เห็นทั้งหน้าในจอเดียว)
     app.style.transform="none";const naturalH=app.scrollHeight||820;
-    const availH=(window.innerHeight||800)-6;
+    const top=document.querySelector(".top");const topH=top?top.offsetHeight:0;
+    const availH=(window.innerHeight||800)-topH-10;
     s=Math.min(vw/DESIGN_W, availH/naturalH, MAX_SCALE);
   }
   app.style.transform="scale("+s.toFixed(4)+")";
