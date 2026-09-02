@@ -56,20 +56,26 @@ function renderTasks(){const m=machineById(curMid);
         </div>
         <div class="tc-fld grow">
           <label>ความคืบหน้า <b class="pv" style="color:${STCOL[st]}">${p}%</b></label>
-          <input class="prg edit" type="range" min="0" max="100" step="5" value="${p}" data-f="prog">
+          <div class="prgctl">
+            <div class="stepper"><button type="button" class="stp pstp" data-pstp="-1" aria-label="ลด 1%">−</button><input class="num edit prgnum" type="number" min="0" max="100" step="1" value="${p}" inputmode="numeric"><button type="button" class="stp pstp" data-pstp="1" aria-label="เพิ่ม 1%">＋</button></div>
+            <input class="prg edit" type="range" min="0" max="100" step="1" value="${p}">
+          </div>
         </div>
       </div>
       <div class="tc-note"><label>หมายเหตุ</label><input class="edit" value="${escapeHtml(t.note||"")}" data-f="note" placeholder="เพิ่มหมายเหตุ เช่น รอวัสดุ / ปัญหาที่พบ…"></div>
     </div>`;}).join("");
   $("taskBody").querySelectorAll(".tcard:not(.locked)").forEach(card=>{const i=+card.dataset.i;const T=()=>machineById(curMid).tasks[i];
-    const li=card.querySelector('input[data-f=labor]'),rg=card.querySelector('.prg'),pv=card.querySelector('.pv'),badge=card.querySelector('.tc-badge');
-    const setProg=v=>{v=Math.max(0,Math.min(100,+v));const t=T();t.prog=v;rg.value=v;
+    const li=card.querySelector('input[data-f=labor]'),rg=card.querySelector('.prg'),pn=card.querySelector('.prgnum'),pv=card.querySelector('.pv'),badge=card.querySelector('.tc-badge');
+    const setProg=(v,ren)=>{v=Math.max(0,Math.min(100,Math.round(+v||0)));const t=T();t.prog=v;if(+rg.value!==v)rg.value=v;if(+pn.value!==v)pn.value=v;
       const st=v>=100?"done":(v>0?"prog":"todo");pv.textContent=v+"%";pv.style.color=STCOL[st];
       card.className="tcard "+st;badge.textContent=STLABEL[st]+" · "+v+"%";badge.className="tc-badge s-"+st;
-      refreshMini();scheduleSave();};
+      refreshMini();scheduleSave();if(ren&&v>=100)renderTasks();}; // ครบ 100% → ล็อกดูอย่างเดียว
     rg.addEventListener('input',e=>setProg(e.target.value));
-    rg.addEventListener('change',()=>{if((+T().prog||0)>=100)renderTasks();}); // ครบ 100% แล้วล็อกเป็นดูอย่างเดียว
-    card.querySelectorAll('.stp').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;li.dispatchEvent(new Event('input'));}));
+    rg.addEventListener('change',()=>setProg(rg.value,true));
+    pn.addEventListener('input',()=>setProg(pn.value));
+    pn.addEventListener('change',()=>setProg(pn.value,true));
+    card.querySelectorAll('.pstp').forEach(b=>b.addEventListener('click',()=>setProg((+T().prog||0)+(+b.dataset.pstp),true))); // +/- 1%
+    card.querySelectorAll('[data-stp]').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;li.dispatchEvent(new Event('input'));}));
     li.addEventListener('input',()=>{const t=T();t.labor=li.value===""?null:Math.max(0,+li.value);refreshWeights();scheduleSave();});
     const ni=card.querySelector('input[data-f=note]');ni.addEventListener('input',()=>{T().note=ni.value;scheduleSave();});
   });}

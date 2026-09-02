@@ -48,6 +48,8 @@ header.top{position:sticky;top:0;z-index:40;background:var(--panel);border-botto
   font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:.13s;text-decoration:none}
 .tbtn:hover{border-color:var(--brand);color:var(--brand);background:var(--brandSoft)}
 .tbtn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.snapdate{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 10px;font-family:inherit;font-size:12.5px;color-scheme:light}
+.snapdate:focus{outline:none;border-color:var(--brand)}
 .tbtn.pri:hover{background:var(--brand2);color:#fff}
 .save-dot{font-size:11.5px;color:var(--ink2);display:inline-flex;align-items:center;gap:7px}
 .save-dot b{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
@@ -231,7 +233,9 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .stepper .stp:active{background:color-mix(in srgb,var(--brand) 28%,#fff)}
 .stepper input.edit{width:64px;border:none;border-left:1px solid color-mix(in srgb,var(--brand) 30%,transparent);border-right:1px solid color-mix(in srgb,var(--brand) 30%,transparent);border-radius:0;text-align:center;font-size:22px;font-weight:800;color:#0e2b30;box-shadow:none;padding:8px 2px}
 .stepper input.edit:focus{box-shadow:none;background:#f2feff}
-.prg.edit{width:100%;height:12px;accent-color:var(--brand);cursor:pointer;margin:2px 0}
+.prgctl{display:flex;flex-direction:column;gap:11px}
+.prgctl .stepper{align-self:flex-start}
+.prg.edit{width:100%;height:12px;accent-color:var(--brand);cursor:pointer;margin:0}
 .quick{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
 .qb{flex:1;min-width:48px;border:1.5px solid var(--line2);background:#fff;color:var(--ink2);border-radius:10px;padding:9px 4px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.12s}
 .qb:hover{border-color:var(--brand)}

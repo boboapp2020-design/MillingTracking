@@ -6,7 +6,7 @@
 <title>ระบบติดตามงานซ่อมลูกหีบ</title>
 <!-- ออฟไลน์ 100% : ไม่พึ่ง CDN / ฟอนต์ภายนอก · ภาพฝังแบบ data URI -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=17">
+<link rel="stylesheet" href="shared.css?v=18">
 </head>
 <body class="bgphoto">
 <header class="top">
@@ -18,7 +18,8 @@
     </div>
     <span class="save-dot"><b id="saveDot"></b><span id="saveTxt">พร้อมใช้งาน</span></span>
     <a class="tbtn pri" href="dashboard.html">Dashboard</a>
-    <button class="tbtn" id="btnSnap">บันทึกวันนี้</button>
+    <input type="date" id="snapDate" class="snapdate" min="2026-09-01" title="เลือกวันที่บันทึกผล">
+    <button class="tbtn" id="btnSnap">บันทึกผล</button>
     <button class="tbtn" id="btnSync" title="คลิกเพื่อดึงข้อมูลล่าสุดจากชีท">ซิงค์</button>
     <button class="tbtn" id="btnExport">ส่งออก</button>
     <button class="tbtn" id="btnImport">นำเข้า</button>
@@ -84,7 +85,7 @@
   </div>
 </aside>
 
-<script src="shared.js?v=17"></script>
-<script src="input.js?v=17"></script>
+<script src="shared.js?v=18"></script>
+<script src="input.js?v=18"></script>
 </body>
 </html>

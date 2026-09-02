@@ -101,8 +101,11 @@ async function pushRemote(){if(!syncUrl)return;setSyncBtn("busy");
 async function saveSnapshot(){
   if(!syncUrl){alert("กรุณาเชื่อม Google Sheet ก่อน (กดปุ่ม ☁️ เชื่อม Sheet)");return;}
   const js=jobs().map(m=>({name:m.name,pct:+machineActual(m).localPct.toFixed(1)}));
-  const now=new Date();const ds=String(now.getDate()).padStart(2,"0")+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+now.getFullYear();
-  const snap={date:ds,time:now.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}),overall:+actualPct().toFixed(2),plan:+planPctUpTo(TODAY_SERIAL).toFixed(2),jobs:js};
+  const sel=$("snapDate");let dt=new Date();
+  if(sel&&sel.value){const q=sel.value.split("-").map(Number);dt=new Date(q[0],q[1]-1,q[2]);}
+  if(dToSerial(dt)<46266){alert("บันทึกย้อนหลังได้ไม่เกินวันที่ 01/09/2026");return;}
+  const P=n=>String(n).padStart(2,"0");const ds=P(dt.getDate())+"/"+P(dt.getMonth()+1)+"/"+dt.getFullYear();const ser=dToSerial(dt);const now=new Date();
+  const snap={date:ds,time:now.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}),overall:+actualPct().toFixed(2),plan:+planPctUpTo(ser).toFixed(2),jobs:js};
   const btn=$("btnSnap");const old=btn?btn.textContent:"";if(btn)btn.textContent="⏳ กำลังบันทึก…";
   try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"snapshot",snapshot:snap,key:SYNC_KEY})});
     const j=await res.json();
@@ -121,6 +124,7 @@ async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn
 }
 function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
+  const sDate=$("snapDate");if(sDate){const t=new Date();const q=n=>String(n).padStart(2,"0");const iso=t.getFullYear()+"-"+q(t.getMonth()+1)+"-"+q(t.getDate());sDate.value=iso;sDate.max=iso;sDate.min="2026-09-01";}
   const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); await pullRemote(); });  // คลิก = ดึงข้อมูลล่าสุดจากชีท (ไม่มี prompt แก้ URL)
 }
 /* ---- cane-truck race: วิ่งตาม % งานซ่อมรวมทั้งแผนก เข้าเส้นชัยที่ 100% ---- */
