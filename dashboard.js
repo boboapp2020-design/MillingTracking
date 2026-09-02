@@ -5,7 +5,7 @@ let SNAPS=null;
 function fmtG(s){if(s==null)return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();}
 
 function renderPeriodBar(){const rng=projectRange();const asof=new Date().toLocaleString("th-TH",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
-  $("periodBar").innerHTML=`<span class="chip">📆 ช่วงแผนงาน <b>${fmtTH(46276)} – ${fmtTH(46321)}</b></span><span class="chip">🗓️ ขอบเขตงานจริง <b>${fmtTH(rng.min)} – ${fmtTH(rng.max)}</b></span><span class="chip">🕒 ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก: man-hour (คน×ชม.จริง 8/9) · 10 Jobs = 100%</span>`;}
+  $("periodBar").innerHTML=`<span class="chip">ช่วงแผนงาน <b>${fmtTH(46276)} – ${fmtTH(46321)}</b></span><span class="chip">ขอบเขตงานจริง <b>${fmtTH(rng.min)} – ${fmtTH(rng.max)}</b></span><span class="chip">ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก man-hour (คน×ชม.จริง 8/9) · 10 Jobs = 100%</span>`;}
 
 function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=act-plan;const rng=projectRange();const daysLeft=rng.max-TODAY_SERIAL;const total=totalMandays();const spi=plan>0?act/plan:1;
   let done=0,prog=0,todo=0;jobs().forEach(m=>{const s=machineStatus(m);if(s==="done")done++;else if(s==="prog")prog++;else todo++;});
@@ -29,7 +29,7 @@ function renderJobsTable(){const total=totalMandays();
       <td class="rt"><b style="color:${STCOL[r.st]}">${r.act.toFixed(0)}%</b></td>
       <td class="rt" style="color:${sev};font-weight:700">${lag>0.5?"−"+lag.toFixed(0):(lag<-0.5?"+"+(-lag).toFixed(0):"0")}%</td>
       <td><span class="chipst" style="color:${STCOL[r.st]};background:color-mix(in srgb,${STCOL[r.st]} 14%,transparent)">${stTxt}</span></td>
-      <td class="rt"><button class="drill" data-mid="${r.m.id}">ดีเทล ›</button></td></tr>`;}).join("");
+      <td class="rt"><button class="drill" data-mid="${r.m.id}">รายละเอียด ›</button></td></tr>`;}).join("");
   $("jobsTable").innerHTML=`<table class="jtbl"><thead><tr>
       <th>Job / เครื่องจักร</th><th class="rt">น้ำหนัก</th><th style="width:150px">ความคืบหน้า (ขีด=แผน)</th><th class="rt">แผน</th><th class="rt">จริง</th><th class="rt">ต่าง</th><th>สถานะ</th><th></th>
     </tr></thead><tbody>${body}</tbody></table>`;
@@ -49,7 +49,7 @@ function renderGroups(){const total=totalMandays();
 function renderAlerts(){const rows=[];jobs().forEach(m=>{const a=machineActual(m);const plan=machinePlanPct(m);rows.push({m,g:groupOf(m),lag:plan-a.localPct,act:a.localPct,plan,noSched:m.tasks.filter(t=>t.start==null||t.finish==null).length,noWt:m.tasks.filter(t=>manday(t)===0).length});});
   const behind=rows.filter(r=>r.lag>1).sort((x,y)=>y.lag-x.lag);let html="";
   if(behind.length){html+=behind.map(r=>{const sev=r.lag>=15?"var(--red)":(r.lag>=6?"var(--amber)":"var(--grey)");
-    return `<div class="alert" data-mid="${r.m.id}"><div class="sev" style="background:${sev}"></div><div class="an"><div class="t">${r.m.name}</div><div class="s">${r.g.name} · แผน ${r.plan.toFixed(0)}% / จริง ${r.act.toFixed(0)}%${r.m.owner?` · 👤 ${escapeHtml(r.m.owner)}`:""}</div></div><div class="lag" style="color:${sev}">ช้า ${r.lag.toFixed(0)}%</div></div>`;}).join("");
+    return `<div class="alert" data-mid="${r.m.id}"><div class="sev" style="background:${sev}"></div><div class="an"><div class="t">${r.m.name}</div><div class="s">${r.g.name} · แผน ${r.plan.toFixed(0)}% / จริง ${r.act.toFixed(0)}%${r.m.owner?` · ${escapeHtml(r.m.owner)}`:""}</div></div><div class="lag" style="color:${sev}">ช้า ${r.lag.toFixed(0)}%</div></div>`;}).join("");
   }else html+=`<div class="alert-ok">✓ ไม่มีเครื่องจักรที่ช้ากว่าแผน</div>`;
   const tNoS=rows.reduce((s,r)=>s+r.noSched,0),tNoW=rows.reduce((s,r)=>s+r.noWt,0);
   if(tNoS||tNoW)html+=`<div style="font-size:11px;color:var(--ink2);margin-top:8px;border-top:1px dashed var(--line);padding-top:9px">ต้องเติมข้อมูล: ${tNoW?`<b style="color:var(--amber)">${tNoW}</b> งานยังไม่ระบุ คน/วัน `:""}${tNoS?`· <b style="color:var(--amber)">${tNoS}</b> งานยังไม่ระบุวันที่`:""}</div>`;
@@ -78,7 +78,7 @@ function drawCurve(){const cv=$("scurve");if(!cv)return;const dpr=window.deviceP
 /* ---- drill-down detail (read-only) ---- */
 function openDetail(mid){const m=machineById(mid);if(!m)return;const g=groupOf(m);const a=machineActual(m);const total=totalMandays();
   $("dtTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');
-  $("dtSub").textContent=g.name+" · "+m.tasks.length+" งาน"+(m.owner?" · 👤 "+m.owner:"");
+  $("dtSub").textContent=g.name+" · "+m.tasks.length+" งาน"+(m.owner?" · "+m.owner:"");
   $("dtMini").innerHTML=`<div class="m"><div class="l">ความคืบหน้า</div><div class="v" style="color:${STCOL[machineStatus(m)]}">${a.localPct.toFixed(1)}%</div></div><div class="m"><div class="l">ตามแผนวันนี้</div><div class="v">${machinePlanPct(m).toFixed(1)}%</div></div><div class="m"><div class="l">น้ำหนัก (โปรเจกต์)</div><div class="v">${isExcluded(m)?'แยก':a.weight.toFixed(2)+'%'}</div></div><div class="m"><div class="l">งานรวม</div><div class="v">${Math.round(a.rawMH)} <span style="font-size:11px;color:var(--ink2)">man-hr</span></div></div>`;
   $("dtBody").innerHTML=`<table class="dttbl"><thead><tr><th>งาน (Task)</th><th class="rt">คน</th><th class="rt">วัน</th><th class="rt">man-hr</th><th class="rt">%ใน Job</th><th>เริ่ม–เสร็จ</th><th class="rt">%</th></tr></thead><tbody>`+
     m.tasks.map(t=>{const st=t.prog>=100?"done":(t.prog>0?"prog":"todo");const nw=manhour(t)===0;
@@ -96,7 +96,7 @@ function render(){renderPeriodBar();renderKPI();renderJobsTable();renderAlerts()
 function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderGroups();renderAlerts();}
 async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();}
 async function loadSnaps(){const raw=await fetchSnapshots();if(!raw)return null;return raw.map(s=>({serial:serialOfDMY(s.date),overall:s.overall,plan:s.plan}));}
-function serialOfDMY(str){if(!str)return null;const p=String(str).split("/");if(p.length<3)return null;return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));}
+function serialOfDMY(str){if(!str)return null;const s=String(str);const p=s.split("/");if(p.length>=3&&p[2].length<=4)return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));const d=new Date(s);return isNaN(d)?null:dToSerial(new Date(d.getFullYear(),d.getMonth(),d.getDate()));}
 
 $("btnCal").addEventListener("click",()=>{const c=$("calCard");const show=c.style.display==="none";c.style.display=show?"block":"none";if(show){renderCalendar();c.scrollIntoView({behavior:"smooth"});}});
 $("dtClose").addEventListener("click",closeDetail);$("dtScrim").addEventListener("click",closeDetail);

@@ -74,10 +74,10 @@ function wireCommon(){
   const fi=$("fileIn");if(fi)fi.addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=p;save();render();alert("นำเข้าข้อมูลสำเร็จ");}else alert("ไฟล์ไม่ถูกต้อง");}catch(err){alert("อ่านไฟล์ไม่ได้");}};r.readAsText(f);e.target.value="";});
 }
 
-/* ---- Google Sheet sync (Apps Script backend) ---- */
-const SYNC_URL_KEY="mr_sync_url";let syncUrl=null;let pushTimer=null;let lastSync=null;let syncReady=false;
-try{syncUrl=localStorage.getItem(SYNC_URL_KEY)||null;}catch(e){}
-function setSyncBtn(state,msg){const b=$("btnSync");if(!b)return;const map={off:"☁️ เชื่อม Sheet",ok:"✅ ซิงค์แล้ว",busy:"⏳ กำลังซิงค์…",err:"⚠️ ซิงค์ไม่สำเร็จ",offline:"📴 ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.toggle("pri",state==="ok");b.title=msg||"";}
+/* ---- Google Sheet sync (Apps Script backend) — URL ฝังไว้ถาวร ผู้ใช้แก้ไม่ได้ ---- */
+const SYNC_URL="https://script.google.com/macros/s/AKfycbwz5JC3AsGW4SRS-suhTRwFi4Z1jQDV5VT1t7laGr08aoj8EFrXDmLxVr4dXxbcBnHU/exec";
+let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;
+function setSyncBtn(state,msg){const b=$("btnSync");if(!b)return;const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
 function schedulePush(){if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1500);}
 async function pushRemote(){if(!syncUrl)return;setSyncBtn("busy");
   try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA})});
@@ -107,17 +107,7 @@ async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn
 }
 function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
-  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{
-    const cur=syncUrl||"";const url=prompt("วาง URL ของ Google Apps Script Web App (ลงท้ายด้วย /exec):",cur);
-    if(url===null)return;const u=url.trim();
-    if(u===""){if(confirm("ยกเลิกการเชื่อม Google Sheet?")){syncUrl=null;try{localStorage.removeItem(SYNC_URL_KEY);}catch(e){}setSyncBtn("off");}return;}
-    if(!/^https:\/\/script\.google\.com\/.*\/exec$/.test(u)){if(!confirm("URL ดูไม่ตรงรูปแบบปกติ (ควรลงท้าย /exec) — ใช้ต่อไหม?"))return;}
-    syncUrl=u;syncReady=true;try{localStorage.setItem(SYNC_URL_KEY,u);}catch(e){}
-    const ok=await pullRemote();
-    if(ok){if(confirm("เชื่อมสำเร็จ! อัปโหลดข้อมูลปัจจุบันขึ้นชีทเลยไหม? (ถ้าชีทมีข้อมูลอยู่แล้วให้กดยกเลิก)"))pushRemote();}
-    else{if(confirm("ยังดึงข้อมูลจากชีทไม่ได้ (อาจยังว่าง) — อัปโหลดข้อมูลปัจจุบันขึ้นชีทเลยไหม?"))pushRemote();}
-    if(typeof onSyncConnected==="function")onSyncConnected();
-  });
+  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); await pullRemote(); });  // คลิก = ดึงข้อมูลล่าสุดจากชีท (ไม่มี prompt แก้ URL)
 }
 /* boot — call after the page defines render() */
-function boot(){wireCommon();wireSync();render();save();setSyncBtn(syncUrl?"busy":"off");if(syncUrl){pullRemote(true).finally(()=>{syncReady=true;});}else{syncReady=true;}}
+function boot(){wireCommon();wireSync();render();save();setSyncBtn("busy");pullRemote(true).finally(()=>{syncReady=true;});}

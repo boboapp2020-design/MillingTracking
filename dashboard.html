@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard — งานซ่อมลูกหีบ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
 <style>
 .jtbl{width:100%;border-collapse:collapse;font-size:13px}
@@ -32,18 +33,18 @@
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <div class="logo">📊</div>
+      <div class="logo">ML</div>
       <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
       <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
     <span class="save-dot"><b id="saveDot"></b><span id="saveTxt">พร้อมใช้งาน</span></span>
-    <a class="tbtn pri" href="index.html">✏️ กรอกข้อมูล</a>
-    <button class="tbtn" id="btnSnap">📸 บันทึกวันนี้</button>
-    <button class="tbtn" id="btnSync">☁️ เชื่อม Sheet</button>
-    <button class="tbtn" id="btnCal">📅 ปฏิทิน</button>
-    <button class="tbtn" id="btnExport">⬇ ส่งออก</button>
-    <button class="tbtn" id="btnImport">⬆ นำเข้า</button>
-    <button class="tbtn" id="btnTheme">🌓</button>
+    <a class="tbtn pri" href="index.html">กรอกข้อมูล</a>
+    <button class="tbtn" id="btnSnap">บันทึกวันนี้</button>
+    <button class="tbtn" id="btnSync" title="คลิกเพื่อดึงข้อมูลล่าสุดจากชีท">ซิงค์</button>
+    <button class="tbtn" id="btnCal">ปฏิทิน</button>
+    <button class="tbtn" id="btnExport">ส่งออก</button>
+    <button class="tbtn" id="btnImport">นำเข้า</button>
+    <button class="tbtn" id="btnTheme">ธีม</button>
     <input type="file" id="fileIn" accept="application/json" hidden>
   </div>
 </header>
@@ -69,7 +70,7 @@
   </div>
 
   <div class="card" style="margin-top:18px;padding:18px">
-    <div class="sec-title"><div class="sec-ic">🧮</div><h2>น้ำหนักและความคืบหน้ารายงาน (10 Jobs)</h2><span class="pill">คลิกแถวเพื่อดูดีเทล Task</span></div>
+    <div class="sec-title"><div class="sec-ic">🧮</div><h2>น้ำหนักและความคืบหน้ารายงาน (10 Jobs)</h2><span class="pill">คลิกแถวเพื่อดูรายละเอียด Task</span></div>
     <div class="tblwrap" id="jobsTable"></div>
   </div>
 
