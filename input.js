@@ -5,7 +5,7 @@ function renderDiagram(){
   const html=Object.keys(DATA.pins).map(id=>{const m=machineById(id);if(!m)return"";const a=machineActual(m);const st=machineStatus(m);const col=STCOL[st];const pos=DATA.pins[id];
     const num=/^m[1-5]$/.test(id)?id.replace("m",""):(id==="mr"?"R":"·");
     const label=m.name.replace("ลูกหีบ ชุดที่","ลูกหีบ").replace("ตะแกรง ","");
-    return `<div class="pin st-${st} ${st==='prog'?'prog':''}" data-mid="${id}" style="left:${pos.x}%;top:${pos.y}%;--pc:${st==='done'?'var(--green)':'#8b929d'}">
+    return `<div class="pin st-${st} ${st==='prog'?'prog':''}" data-mid="${id}" style="left:${pos.x}%;top:${pos.y}%;--p:${a.localPct.toFixed(1)}">
       <div class="dot"><i>${num}</i></div>
       <div class="plabel">${label}</div>
       <div class="ppct s-${st}">${st==='done'?'✓ 100%':a.localPct.toFixed(0)+'%'}</div></div>`;}).join("");
