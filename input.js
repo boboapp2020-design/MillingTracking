@@ -56,22 +56,23 @@ function renderTasks(){const m=machineById(curMid);
         <div class="tc-fld"><label>จำนวนคน</label>
           <div class="stepper"><button type="button" class="stp" data-stp="-1" aria-label="ลด">−</button><input class="num edit" type="number" min="0" step="1" value="${dl??""}" data-f="labor" inputmode="numeric"><button type="button" class="stp" data-stp="1" aria-label="เพิ่ม">＋</button></div>
         </div>
-        <div class="tc-fld grow"><label>ความคืบหน้า <b class="pv" style="color:${STCOL[dst]}">${dp}%</b></label>
-          <div class="prgrow"><button type="button" class="stpbtn pstp" data-pstp="-1" aria-label="ลด 1%">−</button><input class="prg edit" type="range" min="0" max="100" step="1" value="${dp}"><button type="button" class="stpbtn pstp" data-pstp="1" aria-label="เพิ่ม 1%">＋</button></div>
+        <div class="tc-fld grow"><label>ความคืบหน้า <b class="pv" style="color:${STCOL[dst]}">${Math.max(dp,ap)}%</b>${ap>0?`<span class="floorhint">🔒 ตรวจแล้ว ${ap}% · ลดต่ำกว่านี้ไม่ได้</span>`:''}</label>
+          <div class="prgrow"><button type="button" class="stpbtn pstp" data-pstp="-1" aria-label="ลด 1%">−</button><input class="prg edit" type="range" min="${ap}" max="100" step="1" value="${Math.max(dp,ap)}"><button type="button" class="stpbtn pstp" data-pstp="1" aria-label="เพิ่ม 1%">＋</button></div>
         </div>
       </div>
       <div class="tc-note"><label>หมายเหตุ</label><input class="edit" value="${escapeHtml(dn||"")}" data-f="note" placeholder="เพิ่มหมายเหตุ เช่น รอวัสดุ / ปัญหาที่พบ…"></div>
     </div>`;}).join("");
   $("taskBody").querySelectorAll(".tcard:not(.locked)").forEach(card=>{ // แก้เฉพาะการแสดงผล (ร่าง) ยังไม่เขียนค่าจริง
+    const i=+card.dataset.i;const floor=+machineById(curMid).tasks[i].prog||0; // ตรวจแล้วลดต่ำกว่านี้ไม่ได้
     const li=card.querySelector('input[data-f=labor]'),rg=card.querySelector('.prg'),pv=card.querySelector('.pv'),badge=card.querySelector('.tc-badge');
-    const setP=v=>{v=Math.max(0,Math.min(100,Math.round(+v||0)));if(+rg.value!==v)rg.value=v;const st=v>=100?"done":(v>0?"prog":"todo");pv.textContent=v+"%";pv.style.color=STCOL[st];badge.textContent=STLABEL[st]+" · "+v+"%";badge.className="tc-badge s-"+st;};
+    const setP=v=>{v=Math.max(floor,Math.max(0,Math.min(100,Math.round(+v||0))));if(+rg.value!==v)rg.value=v;const st=v>=100?"done":(v>0?"prog":"todo");pv.textContent=v+"%";pv.style.color=STCOL[st];badge.textContent=STLABEL[st]+" · "+v+"%";badge.className="tc-badge s-"+st;};
     rg.addEventListener('input',e=>setP(e.target.value));
     card.querySelectorAll('.pstp').forEach(b=>b.addEventListener('click',()=>setP((+rg.value||0)+(+b.dataset.pstp))));
     card.querySelectorAll('[data-stp]').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;}));
   });}
 function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}let n=0;
   $("taskBody").querySelectorAll(".tcard:not(.locked)").forEach(card=>{const i=+card.dataset.i;const t=m.tasks[i];
-    const prog=Math.max(0,Math.min(100,Math.round(+card.querySelector('.prg').value||0)));
+    const prog=Math.max(+t.prog||0,Math.max(0,Math.min(100,Math.round(+card.querySelector('.prg').value||0)))); // ไม่ต่ำกว่าที่ตรวจแล้ว
     const lv=card.querySelector('input[data-f=labor]').value;const labor=lv===""?null:Math.max(0,+lv);
     const note=card.querySelector('input[data-f=note]').value;
     const changed=prog!==(+t.prog||0)||labor!==(t.labor??null)||(note||"")!==(t.note||"");
@@ -81,7 +82,7 @@ function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;
     else if(pend){DATA.logs=DATA.logs.filter(L=>L!==pend);} // กลับเท่าเดิม → ถอนรายการ
   });
   scheduleSave();renderLog();closeDrawer();
-  if(n)setTimeout(()=>alert("ส่งเข้ารอตรวจสอบแล้ว "+n+" รายการ\n% จะไปแสดงบนหมุด/Dashboard หลังผ่านการตรวจสอบ (ใส่ PIN)"),120);
+  if(n)setTimeout(()=>notify("บันทึกสำเร็จ","ส่งเข้ารอตรวจสอบแล้ว "+n+" รายการ · % จะแสดงบนหมุด/Dashboard หลังผ่านการตรวจสอบ"),150);
 }
 function refreshWeights(){const m=machineById(curMid);if(!m)return;
   $("taskBody").querySelectorAll(".tcard").forEach(card=>{const i=+card.dataset.i;const t=m.tasks[i];if(t){const w=card.querySelector('.tcw');if(w)w.textContent=manhour(t)===0?"—":taskWeightInJob(t,m).toFixed(1)+"%";}});refreshMini();}
@@ -126,7 +127,7 @@ function approveReview(){const L=(DATA.logs||[]).find(x=>x.id===reviewId);if(!L)
   const m=machineById(L.mid);if(m&&m.tasks[L.ti]){const t=m.tasks[L.ti];t.prog=prog;t.labor=labor;t.note=note;}
   L.prog=prog;L.labor=labor;L.note=note;L.status="approved";L.reviewTs=Date.now();L.reviewBy="ผู้ตรวจ";
   scheduleSave();closeReview();renderLog();renderDiagram();
-  setTimeout(()=>alert("ตรวจแล้ว ✓ อัปเดตความคืบหน้าบนหมุด/Dashboard เรียบร้อย"),90);}
+  setTimeout(()=>notify("ตรวจสอบสำเร็จ","อัปเดตความคืบหน้าบนหมุด/Dashboard เรียบร้อย"),120);}
 function wireReview(){
   const bind=(id,fn)=>{const e=$(id);if(e)e.addEventListener("click",fn);};
   bind("pinOk",submitPin);bind("pinCancel",closePin);const pb=$("pinScrim");if(pb)pb.addEventListener("click",closePin);

@@ -99,20 +99,37 @@ async function pushRemote(){if(!syncUrl)return;setSyncBtn("busy");
     const j=await res.json();if(j&&j.ok){lastSync=new Date();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}else setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ");
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้ · ข้อมูลถูกเก็บในเครื่องแล้ว");}
 }
+/* ---- popup แจ้งเตือนกลางจอ (แทน alert) ---- */
+function notify(title,sub,type){type=type||"ok";
+  let sc=$("noteScrim"),md=$("noteModal");
+  if(!md){sc=document.createElement("div");sc.id="noteScrim";sc.className="scrim note-scrim";document.body.appendChild(sc);
+    md=document.createElement("div");md.id="noteModal";md.className="notemodal";
+    md.innerHTML='<div class="note-ic" id="noteIc"></div><div class="note-title" id="noteTitle"></div><div class="note-sub" id="noteSub"></div><button class="tbtn pri" id="noteOk">ตกลง</button>';
+    document.body.appendChild(md);
+    $("noteOk").addEventListener("click",hideNote);sc.addEventListener("click",hideNote);}
+  const ok='<svg viewBox="0 0 52 52" width="76" height="76" aria-hidden="true"><circle cx="26" cy="26" r="24" fill="#eafaf0" stroke="#1f8a4c" stroke-width="2" opacity=".55"/><circle class="nck-c" cx="26" cy="26" r="24" fill="none" stroke="#1f8a4c" stroke-width="3.2" stroke-linecap="round" transform="rotate(-90 26 26)"/><path class="nck-p" d="M15.5 27 l7 7 l14.5 -15.5" fill="none" stroke="#1f8a4c" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const err='<svg viewBox="0 0 52 52" width="76" height="76" aria-hidden="true"><circle cx="26" cy="26" r="24" fill="#fdeceb" stroke="#c33d33" stroke-width="3"/><path d="M18 18 l16 16 M34 18 l-16 16" stroke="#c33d33" stroke-width="4" stroke-linecap="round"/></svg>';
+  $("noteIc").innerHTML=type==="err"?err:ok;
+  $("noteTitle").textContent=title||"สำเร็จ";
+  const s=$("noteSub");s.textContent=sub||"";s.style.display=sub?"block":"none";
+  md.classList.toggle("err",type==="err");
+  sc.classList.add("on");md.classList.add("on");
+  clearTimeout(window._noteT);if(type!=="err")window._noteT=setTimeout(hideNote,2400);}
+function hideNote(){const sc=$("noteScrim"),md=$("noteModal");if(sc)sc.classList.remove("on");if(md)md.classList.remove("on");clearTimeout(window._noteT);}
 async function saveSnapshot(){
   if(!syncUrl){alert("กรุณาเชื่อม Google Sheet ก่อน (กดปุ่ม ☁️ เชื่อม Sheet)");return;}
   const js=jobs().map(m=>({name:m.name,pct:+machineActual(m).localPct.toFixed(1)}));
   const sel=$("snapDate");let dt=new Date();
   if(sel&&sel.value){const q=sel.value.split("-").map(Number);dt=new Date(q[0],q[1]-1,q[2]);}
-  if(dToSerial(dt)<46266){alert("บันทึกย้อนหลังได้ไม่เกินวันที่ 01/09/2026");return;}
+  if(dToSerial(dt)<46266){notify("วันที่ไม่ถูกต้อง","บันทึกย้อนหลังได้ไม่เกิน 01/09/2026","err");return;}
   const P=n=>String(n).padStart(2,"0");const ds=P(dt.getDate())+"/"+P(dt.getMonth()+1)+"/"+dt.getFullYear();const ser=dToSerial(dt);const now=new Date();
   const snap={date:ds,time:now.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}),overall:+actualPct().toFixed(2),plan:+planPctUpTo(ser).toFixed(2),jobs:js};
   const btn=$("btnSnap");const old=btn?btn.textContent:"";if(btn)btn.textContent="⏳ กำลังบันทึก…";
   try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"snapshot",snapshot:snap,key:SYNC_KEY})});
     const j=await res.json();
-    if(j&&j.ok){if(btn){btn.textContent="✅ บันทึกแล้ว";setTimeout(()=>btn.textContent=old,2500);}alert("บันทึก Snapshot วันที่ "+ds+" ลงชีทแล้ว\n%รวม = "+snap.overall+"% · ตามแผน = "+snap.plan+"%");}
-    else{if(btn)btn.textContent=old;alert("บันทึกไม่สำเร็จ: "+((j&&j.error)||"ไม่ทราบสาเหตุ"));}
-  }catch(e){if(btn)btn.textContent=old;alert("เชื่อมต่ออินเทอร์เน็ตไม่ได้");}
+    if(j&&j.ok){if(btn){btn.textContent="✅ บันทึกแล้ว";setTimeout(()=>btn.textContent=old,2500);}notify("บันทึกสำเร็จ","Snapshot วันที่ "+ds+" · %รวม "+snap.overall+"% · ตามแผน "+snap.plan+"%");}
+    else{if(btn)btn.textContent=old;notify("บันทึกไม่สำเร็จ",((j&&j.error)||"ไม่ทราบสาเหตุ"),"err");}
+  }catch(e){if(btn)btn.textContent=old;notify("เชื่อมต่อไม่ได้","ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่","err");}
 }
 async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetch(syncGet("snap=1"));const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
 async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
