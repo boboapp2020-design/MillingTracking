@@ -133,6 +133,8 @@ header.top{position:sticky;top:0;z-index:40;
   font-size:10.5px;font-weight:700;color:var(--ink);background:var(--glass);border:1px solid var(--line);
   border-radius:8px;padding:2px 8px;box-shadow:var(--shadow);backdrop-filter:blur(6px)}
 .pin .plabel small{color:var(--ink2);font-weight:700}
+.pin .plabel .succ{color:#fff;background:var(--green);border-radius:5px;padding:0 6px;font-weight:800;font-size:10px;box-shadow:0 1px 4px color-mix(in srgb,var(--green) 45%,transparent)}
+.succ-badge{background:var(--green);color:#fff;font-size:12px;padding:3px 9px;border-radius:7px;font-weight:800;vertical-align:middle;box-shadow:0 2px 6px color-mix(in srgb,var(--green) 40%,transparent)}
 .pin.editing{cursor:grab}.pin.editing .dot{outline:2px dashed var(--brand);outline-offset:3px}
 .hero-legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:11px 4px 3px;font-size:11.5px;color:var(--ink2)}
 .hero-legend span{display:inline-flex;align-items:center;gap:6px}.hero-legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
@@ -375,10 +377,10 @@ const SEED={groups:[
   ]}
 ]};
 /* default pin positions (% of image) — ปรับได้ในโหมดจัดตำแหน่ง */
-const DEFAULT_PINS={pdump:{x:9,y:49},pside:{x:29,y:41},psand:{x:16.5,y:53},pmain:{x:22.5,y:61},pshred:{x:33,y:56},
+const DEFAULT_PINS={pdump:{x:10,y:64},pside:{x:29,y:41},psand:{x:16.5,y:53},pmain:{x:22.5,y:61},pshred:{x:33,y:56},
   m1:{x:46.5,y:44},m2:{x:56,y:44},m3:{x:65,y:44},m4:{x:74,y:44},m5:{x:83,y:44},mr:{x:91,y:60}};
 
-const LS_KEY="milling_repair_v3";
+const LS_KEY="milling_repair_v4";
 function freshFromSeed(){let tid=0;const g=SEED.groups.map(gr=>({id:gr.id,name:gr.name,machines:gr.machines.map(m=>({id:m.id,name:m.name,owner:"",tasks:m.tasks.map(t=>({id:m.id+"-"+(++tid),name:t[0],days:t[1],labor:t[2],start:t[3]??null,finish:t[4]??null,note:t[5]||"",prog:t[6]||0}))}))}));return {groups:g,pins:JSON.parse(JSON.stringify(DEFAULT_PINS)),updated:Date.now()};}
 let WAS_SEED=false;
 function load(){try{const r=localStorage.getItem(LS_KEY);if(r){const p=JSON.parse(r);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));return p;}}}catch(e){}WAS_SEED=true;return freshFromSeed();}
@@ -437,7 +439,7 @@ function renderDiagram(){
     const label=m.name.replace("ลูกหีบ ชุดที่","ชุด").replace("ตะแกรง ","").replace("สะพาน ","");
     return `<div class="pin ${st==='prog'?'prog':''}" data-mid="${id}" style="left:${pos.x}%;top:${pos.y}%;--pc:${col}">
       <div class="dot" style="--p:${a.localPct.toFixed(0)}"><i>${num}</i></div>
-      <div class="plabel">${label} <small>${a.localPct.toFixed(0)}%</small></div></div>`;}).join("");
+      <div class="plabel">${label} ${st==='done'?'<b class="succ">✓ Success 100%</b>':`<small>${a.localPct.toFixed(0)}%</small>`}</div></div>`;}).join("");
   $("pinLayer").innerHTML=html;
   $("pinLayer").querySelectorAll(".pin").forEach(p=>{
     if(editPins){p.classList.add("editing");makeDraggable(p);}
@@ -481,7 +483,7 @@ function drawCurve(){const cv=$("scurve");const dpr=window.devicePixelRatio||1;c
 /* drawer */
 let curMid=null;
 function openDrawer(mid){if(editPins)return;curMid=mid;const m=machineById(mid);if(!m)return;const g=DATA.groups.find(gr=>gr.machines.includes(m));
-  $("dTitle").textContent=m.name;$("dSub").textContent=g.name+" · "+m.tasks.length+" งาน";
+  $("dTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');$("dSub").textContent=g.name+" · "+m.tasks.length+" งาน";
   const ow=$("dOwner");ow.value=m.owner||"";ow.oninput=()=>{m.owner=ow.value;scheduleSave();};
   renderTasks();$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
 function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;render();}
