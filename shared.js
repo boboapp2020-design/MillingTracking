@@ -112,12 +112,13 @@ function wireSync(){
   const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); await pullRemote(); });  // คลิก = ดึงข้อมูลล่าสุดจากชีท (ไม่มี prompt แก้ URL)
 }
 /* ---- cane-truck race: วิ่งตาม % งานซ่อมรวมทั้งแผนก เข้าเส้นชัยที่ 100% ---- */
-function renderRace(){const t=$("truck");if(!t)return;const p=Math.max(0,Math.min(100,actualPct()));
-  t.style.left="calc(56px + (100% - 194px) * "+(p/100).toFixed(4)+")";
+function renderRace(){const t=$("truck");if(!t)return;
+  const p=Math.max(0,Math.min(100,actualPct())),f=p/100;
+  t.style.left=(5+73*f).toFixed(2)+"%";          /* center วิ่ง 5% → 78% ของแทร็ก */
+  t.style.bottom=(16+30*f).toFixed(1)+"px";      /* ไต่สูงขึ้นเมื่อเข้าใกล้เส้นชัย (มุมมองลึก) */
+  t.style.transform="translateX(-50%) scale("+(1-0.30*f).toFixed(3)+")"; /* เล็กลงเมื่อไกลออกไป */
   const pct=$("tkPct");if(pct)pct.textContent=p.toFixed(1)+"%";
   const done=p>=99.95;t.classList.toggle("done",done);
-  const ms=$("mstones");if(ms){if(!ms.children.length){let h="";for(let i=1;i<=9;i++)h+='<span class="msdot" style="left:calc(56px + (100% - 120px) * '+(i/10).toFixed(3)+')"></span>';ms.innerHTML=h;}
-    [...ms.children].forEach((el,i)=>el.classList.toggle("lit",p>=(i+1)*10));}
   const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":"วิ่งไปแล้ว "+p.toFixed(0)+"% ของเส้นชัย";}
 
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
