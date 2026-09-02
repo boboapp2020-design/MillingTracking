@@ -18,12 +18,13 @@ function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=a
    <div class="card kpi a"><div class="ic">🛠️</div><div class="body"><div class="lab">สถานะ 10 Jobs</div><div class="val" style="font-size:20px"><span style="color:var(--green)">${done}</span> <small>เสร็จ</small> · <span style="color:var(--amber)">${prog}</span> <small>ทำ</small> · <span style="color:var(--grey)">${todo}</span> <small>รอ</small></div><div class="meta">เสร็จ ${fmtTH(rng.max)} · เหลือ ${daysLeft} วัน</div></div></div>`;}
 
 function renderJobsTable(){const total=totalMandays();
-  const rows=jobs().map(m=>{const a=machineActual(m);return {m,name:m.name,weight:a.weight,plan:machinePlanPct(m),act:a.localPct,mh:a.rawMH,st:machineStatus(m),owner:m.owner};});
+  const rows=jobs().map(m=>{const a=machineActual(m);return {m,name:m.name,weight:a.weight,plan:machinePlanPct(m),act:a.localPct,mh:a.rawMH,used:machineConsumedMH(m),st:machineStatus(m),owner:m.owner};});
   rows.sort((x,y)=>y.weight-x.weight);
   const body=rows.map(r=>{const lag=r.plan-r.act;const sev=lag>15?"var(--red)":(lag>6?"var(--amber)":(r.act>=r.plan?"var(--green)":"var(--ink2)"));const stTxt={done:"เสร็จ",prog:"กำลังทำ",todo:"ยังไม่เริ่ม"}[r.st];
     return `<tr data-mid="${r.m.id}">
       <td class="jn"><span class="dotm" style="background:${STCOL[r.st]}"></span>${r.name}${r.owner?`<div class="jo">👤 ${escapeHtml(r.owner)}</div>`:""}</td>
-      <td class="rt"><b>${r.weight.toFixed(2)}%</b><div class="jsub">${Math.round(r.mh)} mh</div></td>
+      <td class="rt"><b>${r.weight.toFixed(2)}%</b></td>
+      <td class="rt"><b>${Math.round(r.mh)}</b><div class="jsub" style="color:${(r.mh-r.used)<0?'var(--red)':'var(--ink2)'};font-weight:700">เหลือ ${Math.round(r.mh-r.used)}</div></td>
       <td class="jbar"><div class="bar"><i style="width:${r.act.toFixed(1)}%;background:${STCOL[r.st]}"></i><o style="left:${Math.min(r.plan,100).toFixed(1)}%"></o></div></td>
       <td class="rt">${r.plan.toFixed(0)}%</td>
       <td class="rt"><b style="color:${STCOL[r.st]}">${r.act.toFixed(0)}%</b></td>
@@ -31,7 +32,7 @@ function renderJobsTable(){const total=totalMandays();
       <td><span class="chipst" style="color:${STCOL[r.st]};background:color-mix(in srgb,${STCOL[r.st]} 14%,transparent)">${stTxt}</span></td>
       <td class="rt"><button class="drill" data-mid="${r.m.id}">รายละเอียด ›</button></td></tr>`;}).join("");
   $("jobsTable").innerHTML=`<table class="jtbl"><thead><tr>
-      <th>Job / เครื่องจักร</th><th class="rt">น้ำหนัก</th><th style="width:150px">ความคืบหน้า (ขีด=แผน)</th><th class="rt">แผน</th><th class="rt">จริง</th><th class="rt">ต่าง</th><th>สถานะ</th><th></th>
+      <th>Job / เครื่องจักร</th><th class="rt">น้ำหนัก</th><th class="rt">Man-hr<br><span style="font-weight:400;opacity:.6">เป้า/เหลือ</span></th><th style="width:150px">ความคืบหน้า (ขีด=แผน)</th><th class="rt">แผน</th><th class="rt">จริง</th><th class="rt">ต่าง</th><th>สถานะ</th><th></th>
     </tr></thead><tbody>${body}</tbody></table>`;
   $("jobsTable").querySelectorAll("tr[data-mid]").forEach(tr=>tr.addEventListener("click",()=>openDetail(tr.dataset.mid)));}
 
@@ -103,9 +104,17 @@ function openDetail(mid){const m=machineById(mid);if(!m)return;const g=groupOf(m
 function closeDetail(){$("dtScrim").classList.remove("on");$("detail").classList.remove("on");}
 
 function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=new Set([46276,46321]);const thMon=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];const dh=["จ","อ","พ","พฤ","ศ","ส","อา"];
+  const P=n=>String(n).padStart(2,"0");const recByDate={};(DATA.logs||[]).forEach(L=>{if(L.date)recByDate[L.date]=(recByDate[L.date]||0)+1;});
   $("calMonths").innerHTML=months.map(([yy,mm])=>{const first=new Date(yy,mm,1);const start=(first.getDay()+6)%7;const dim=new Date(yy,mm+1,0).getDate();let cells="";for(let i=0;i<start;i++)cells+=`<div class="cald dim"></div>`;
-    for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const nine=!off&&dt.getDay()>=1&&dt.getDay()<=5&&weekSatOff(dt);const cls=["cald"];if(off)cls.push("off");else if(nine)cls.push("h9");if(MS.has(ser))cls.push("ms");const mk=off?(dt.getDay()===0?"หยุด":"หยุด ส."):(nine?"9 ชม.":"");cells+=`<div class="${cls.join(" ")}"><div class="dn">${d}</div><div class="mk">${mk}</div></div>`;}
-    return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");}
+    for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const nine=!off&&dt.getDay()>=1&&dt.getDay()<=5&&weekSatOff(dt);const cls=["cald","clk"];if(off)cls.push("off");else if(nine)cls.push("h9");if(MS.has(ser))cls.push("ms");const dstr=P(d)+"/"+P(mm+1)+"/"+yy;const rec=recByDate[dstr]||0;if(rec)cls.push("hasrec");const mk=off?(dt.getDay()===0?"หยุด":"หยุด ส."):(nine?"9 ชม.":"");cells+=`<div class="${cls.join(" ")}" data-date="${dstr}"><div class="dn">${d}</div><div class="mk">${mk}</div>${rec?`<div class="calrec">${rec}</div>`:""}</div>`;}
+    return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");
+  $("calMonths").querySelectorAll("[data-date]").forEach(el=>el.addEventListener("click",()=>openDayView(el.dataset.date)));}
+/* คลิกวันในปฏิทิน → ดูงานที่บันทึกวันนั้น */
+function openDayView(dstr){const logs=(DATA.logs||[]).filter(L=>L.date===dstr).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  $("dvTitle").textContent="งานที่บันทึก · "+dstr;
+  $("dvBody").innerHTML=logs.length?logs.map(L=>{const ap=L.status==='approved';return `<div class="dvrow"><div class="dvmain"><div class="dvtask">${escapeHtml(L.machineName||"")} — ${escapeHtml(L.taskName||"")}</div><div class="dvmeta">👤 ${escapeHtml(L.by||"—")} · 👥 ${L.labor??"—"} คน${L.note?" · 📝 "+escapeHtml(L.note):""}</div></div><div class="dvpct"><b style="color:${ap?'var(--green)':'var(--amber)'}">${(+L.prog||0)}%</b></div><div class="dvst"><span class="lg-btn ${ap?'appr':'pend'}" style="cursor:default">${ap?'✓ ตรวจแล้ว':'⏳ รอตรวจสอบ'}</span></div></div>`;}).join(""):'<div class="logempty">ไม่มีงานที่บันทึกในวันนี้</div>';
+  $("dvScrim").classList.add("on");$("dvModal").classList.add("on");}
+function closeDayView(){$("dvScrim").classList.remove("on");$("dvModal").classList.remove("on");}
 
 function addWork(start,n){let s=start,cnt=0,guard=0;const need=Math.ceil(n);if(need<=0)return start;while(cnt<need&&guard<3000){s++;guard++;if(!isHoliday(sd(s)))cnt++;}return s;}
 function renderForecast(){const el=$("forecast");if(!el)return;const rng=projectRange(),s0=rng.min,s1=rng.max;
@@ -147,6 +156,7 @@ function serialOfDMY(str){if(!str)return null;const s=String(str);const p=s.spli
 
 $("btnCal").addEventListener("click",()=>{const c=$("calCard");const show=c.style.display==="none";c.style.display=show?"block":"none";if(show){renderCalendar();c.scrollIntoView({behavior:"smooth"});}});
 $("dtClose").addEventListener("click",closeDetail);$("dtScrim").addEventListener("click",closeDetail);
+{const c=$("dvClose");if(c)c.addEventListener("click",closeDayView);const s=$("dvScrim");if(s)s.addEventListener("click",closeDayView);}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("detail").classList.contains("on"))closeDetail();});
 window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(drawCurve,150);});
 (function(){const cv=$("scurve");if(!cv)return;cv.style.cursor="crosshair";

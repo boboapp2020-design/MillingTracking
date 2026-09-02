@@ -65,6 +65,10 @@ function taskWeight(t,total){return manhour(t)/total*100;}
 function taskWeightInJob(t,m){const raw=machineRawMH(m);return raw>0?manhour(t)/raw*100:0;}
 function machineMandays(m){return machineRawMH(m);}
 function machineActual(m){const total=totalMandays();let rw=0,ra=0;m.tasks.forEach(t=>{const mh=manhour(t);rw+=mh;ra+=mh*(t.prog||0)/100;});const localPct=rw>0?ra/rw*100:0;return {weight:isExcluded(m)?0:rw/total*100,actual:isExcluded(m)?0:ra/total*100,localPct,rawMH:rw};}
+/* man-hour ที่ใช้ไปจริง = ผลรวมของ log ที่อนุมัติแล้ว (คน × ชม.ทำงานของวันนั้น) */
+function serialOfDateStr(s){if(!s)return null;const p=String(s).split("/");if(p.length<3)return null;return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));}
+function consumedMH(mid,ti){let sum=0;(DATA.logs||[]).forEach(L=>{if(L.status==="approved"&&L.mid===mid&&L.ti===ti){const ser=serialOfDateStr(L.date);const h=ser==null?8:(hoursForDay(sd(ser))||8);sum+=(+L.labor||0)*h;}});return sum;}
+function machineConsumedMH(m){let s=0;m.tasks.forEach((t,i)=>{s+=consumedMH(m.id,i);});return s;}
 function machinePlanPct(m){const raw=machineRawMH(m);if(raw<=0)return 0;let acc=0;m.tasks.forEach(t=>{const mh=manhour(t);const ws=workingSerials(t.start,t.finish);if(mh<=0||!ws.length)return;acc+=(mh/raw)*ws.filter(x=>x<=TODAY_SERIAL).length/ws.length;});return acc*100;}
 function machineStatus(m){const a=machineActual(m);if(a.localPct>=99.9)return"done";if(a.localPct>0)return"prog";return"todo";}
 const STCOL={done:"var(--green)",prog:"var(--amber)",todo:"var(--grey)"};
