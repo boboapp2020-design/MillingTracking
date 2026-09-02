@@ -103,7 +103,7 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
   background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 16%)}
 .hero-img{display:block;width:100%;height:auto;position:relative;z-index:2}
 /* race วิ่งด้านบนเครื่องจักร ในกรอบเดียวกัน */
-.hero-frame .race2{position:absolute;top:6px;left:14px;right:14px;height:104px;z-index:6;pointer-events:none;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#232830,#14171c);border:1px solid #333b45;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 28px -12px rgba(0,0,0,.6)}
+.hero-frame .race2{position:absolute;top:10px;left:18px;right:18px;height:92px;z-index:6;pointer-events:none;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#f6fafc 0%,#e8eff5 100%);border:1px solid #d3dde6;box-shadow:inset 0 1px 0 #fff,0 8px 22px -14px rgba(20,30,45,.4)}
 .pinlayer{position:absolute;inset:0;z-index:4}
 .pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:4}
 .pin .dot{--p:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative;
@@ -221,22 +221,27 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 
 footer{max-width:1340px;margin:0 auto;padding:14px 20px 34px;color:var(--ink3);font-size:11.5px;text-align:center}
 
-/* ===== Cane-truck race → finish line (ถนนวาดใหม่ + รถจริง) ===== */
-.race2 .road2{position:absolute;left:22px;right:22px;bottom:16px;height:30px;border-radius:3px;
-  background:linear-gradient(180deg,#464c56 0,#333944 42%,#262b33 100%);
-  border-top:3px solid var(--brand2);border-bottom:3px solid var(--brand2);
-  box-shadow:0 8px 18px -8px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)}
-.race2 .lane{position:absolute;left:12px;right:34px;top:50%;height:3px;transform:translateY(-50%);border-radius:2px;
-  background:repeating-linear-gradient(90deg,#f1f4f7 0 20px,transparent 20px 42px);opacity:.9}
-.race2 .finline{position:absolute;right:0;top:0;bottom:0;width:24px;border-left:2px solid #fff;
+/* ===== Cane-truck race → finish line (ถนนลอย + ไฟบอกระยะ + รถจริง) ===== */
+.race2 .road2{position:absolute;left:16px;right:16px;bottom:15px;height:30px;border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,#3b414b 0%,#2b303a 50%,#1f242c 100%);
+  border:1px solid #434a55;
+  box-shadow:0 12px 20px -9px rgba(15,22,34,.55),inset 0 2px 3px rgba(255,255,255,.10),inset 0 -4px 7px rgba(0,0,0,.5)}
+.race2 .fill{position:absolute;left:0;top:0;bottom:0;width:6%;z-index:1;
+  background:linear-gradient(90deg,rgba(40,214,234,.30),rgba(40,214,234,.55));
+  box-shadow:0 0 18px rgba(40,214,234,.55),inset 0 0 12px rgba(255,255,255,.14);
+  border-right:2px solid rgba(120,240,255,.9);
+  transition:width 1.2s cubic-bezier(.22,.61,.36,1)}
+.race2 .lane{position:absolute;left:14px;right:44px;top:50%;height:3px;transform:translateY(-50%);border-radius:2px;z-index:2;
+  background:repeating-linear-gradient(90deg,#eff3f7 0 18px,transparent 18px 40px);opacity:.9}
+.race2 .finline{position:absolute;right:0;top:0;bottom:0;width:26px;z-index:3;border-left:2px solid rgba(255,255,255,.85);
   background-color:#eef1f4;
-  background-image:linear-gradient(45deg,#171c23 25%,transparent 0),linear-gradient(-45deg,#171c23 25%,transparent 0),linear-gradient(45deg,transparent 75%,#171c23 0),linear-gradient(-45deg,transparent 75%,#171c23 0);
-  background-size:12px 12px;background-position:0 0,0 6px,6px -6px,-6px 0}
-.race2 .rflag{position:absolute;right:14px;top:4px;z-index:5}
-.truck2{position:absolute;left:5%;bottom:24px;width:7.4%;min-width:70px;max-width:124px;z-index:4;transform:translateX(-50%);transform-origin:bottom center;transition:left 1.2s cubic-bezier(.22,.61,.36,1);pointer-events:none}
-.truck2 .truckimg{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45));-webkit-user-drag:none}
-.truck2 .tkpct{position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:700;color:#04252b;background:var(--brand2);border-radius:20px;padding:2px 9px;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.35)}
-.truck2 .tkpct::after{content:"";position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--brand2);border-bottom:0}
+  background-image:linear-gradient(45deg,#12161c 25%,transparent 0),linear-gradient(-45deg,#12161c 25%,transparent 0),linear-gradient(45deg,transparent 75%,#12161c 0),linear-gradient(-45deg,transparent 75%,#12161c 0);
+  background-size:13px 13px;background-position:0 0,0 6.5px,6.5px -6.5px,-6.5px 0}
+.race2 .rflag{position:absolute;right:12px;top:1px;z-index:5;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
+.truck2{position:absolute;left:5%;bottom:23px;width:7%;min-width:66px;max-width:118px;z-index:4;transform:translateX(-50%);transform-origin:bottom center;transition:left 1.2s cubic-bezier(.22,.61,.36,1);pointer-events:none}
+.truck2 .truckimg{display:block;width:100%;height:auto;filter:drop-shadow(0 5px 5px rgba(10,16,24,.5));-webkit-user-drag:none}
+.truck2 .tkpct{position:absolute;left:50%;top:-21px;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:700;color:#04252b;background:linear-gradient(180deg,#4ee2f2,#17b8cc);border-radius:20px;padding:2px 9px;white-space:nowrap;box-shadow:0 4px 10px rgba(23,184,204,.45)}
+.truck2 .tkpct::after{content:"";position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);border:5px solid transparent;border-top-color:#17b8cc;border-bottom:0}
 .truck2.done .truckimg{animation:bump .7s ease 2}
 @keyframes bump{0%,100%{transform:translateY(0)}45%{transform:translateY(-6px)}}
 

@@ -115,6 +115,7 @@ function wireSync(){
 function renderRace(){const t=$("truck");if(!t)return;
   const p=Math.max(0,Math.min(100,actualPct())),f=p/100;
   t.style.left=(6+86*f).toFixed(2)+"%";          /* center วิ่ง 6% → 92% เข้าเส้นชัย */
+  const fl=$("raceFill");if(fl)fl.style.width=(4+87*f).toFixed(2)+"%"; /* ไฟเรืองแสงบอกระยะที่วิ่งไปแล้ว */
   const pct=$("tkPct");if(pct)pct.textContent=p.toFixed(1)+"%";
   const done=p>=99.95;t.classList.toggle("done",done);
   const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":"วิ่งไปแล้ว "+p.toFixed(0)+"% ของเส้นชัย";}
