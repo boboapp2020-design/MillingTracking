@@ -5,9 +5,10 @@ function renderDiagram(){
   const html=Object.keys(DATA.pins).map(id=>{const m=machineById(id);if(!m)return"";const a=machineActual(m);const st=machineStatus(m);const col=STCOL[st];const pos=DATA.pins[id];
     const num=/^m[1-5]$/.test(id)?id.replace("m",""):(id==="mr"?"R":"·");
     const label=m.name.replace("ลูกหีบ ชุดที่","ลูกหีบ").replace("ตะแกรง ","");
-    return `<div class="pin ${st==='prog'?'prog':''}" data-mid="${id}" style="left:${pos.x}%;top:${pos.y}%;--pc:#8b929d">
-      <div class="dot" style="--p:${a.localPct.toFixed(0)}"><i>${num}</i></div>
-      <div class="plabel">${label} ${st==='done'?'<b class="succ">✓ Success 100%</b>':`<small>${a.localPct.toFixed(0)}%</small>`}</div></div>`;}).join("");
+    return `<div class="pin st-${st} ${st==='prog'?'prog':''}" data-mid="${id}" style="left:${pos.x}%;top:${pos.y}%;--pc:${st==='done'?'var(--green)':'#8b929d'}">
+      <div class="dot"><i>${num}</i></div>
+      <div class="plabel">${label}</div>
+      <div class="ppct s-${st}">${st==='done'?'✓ 100%':a.localPct.toFixed(0)+'%'}</div></div>`;}).join("");
   const STATIC=[{t:"Mixed Juice Tank",x:48,y:72},{t:"หม้อไอน้ำ (Boiler)",x:96,y:44}];
   const shtml=STATIC.map(s=>`<div class="staticlbl" style="left:${s.x}%;top:${s.y}%">${s.t}</div>`).join("");
   $("pinLayer").innerHTML=html+shtml;
@@ -42,9 +43,16 @@ function renderTasks(){const m=machineById(curMid);
   $("dMini").innerHTML=miniHTML(m);
   $("taskBody").innerHTML=m.tasks.map((t,i)=>{const p=+t.prog||0;const st=p>=100?"done":(p>0?"prog":"todo");
     const wj=manhour(t)===0?"—":taskWeightInJob(t,m).toFixed(1)+"%";
+    const meta=`<div class="tc-meta">⏱ ${t.days??"—"} วัน · ${dmy(t.start)} → ${dmy(t.finish)} · น้ำหนักใน Job <b class="tcw">${wj}</b></div>`;
+    if(st==="done"){ // เสร็จแล้ว → ดูอย่างเดียว
+      return `<div class="tcard done locked" data-i="${i}">
+        <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-done">✓ เสร็จแล้ว · 100%</span></div>
+        ${meta}
+        <div class="tc-ro"><span>👥 จำนวนคน: <b>${t.labor??"—"}</b></span><span>📝 หมายเหตุ: ${t.note?escapeHtml(t.note):"—"}</span><span class="ro-tag">🔒 ดูอย่างเดียว</span></div>
+      </div>`;}
     return `<div class="tcard ${st}" data-i="${i}">
       <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-${st}">${STLABEL[st]} · ${p}%</span></div>
-      <div class="tc-meta">⏱ ${t.days??"—"} วัน · ${dmy(t.start)} → ${dmy(t.finish)} · น้ำหนักใน Job <b class="tcw">${wj}</b></div>
+      ${meta}
       <div class="tc-grid">
         <div class="tc-fld">
           <label>จำนวนคน</label>
@@ -53,20 +61,18 @@ function renderTasks(){const m=machineById(curMid);
         <div class="tc-fld grow">
           <label>ความคืบหน้า <b class="pv" style="color:${STCOL[st]}">${p}%</b></label>
           <input class="prg edit" type="range" min="0" max="100" step="5" value="${p}" data-f="prog">
-          <div class="quick">${[0,25,50,75,100].map(v=>`<button type="button" class="qb${p===v?' on':''}" data-q="${v}">${v===100?'เสร็จ':v}</button>`).join("")}</div>
         </div>
       </div>
       <div class="tc-note"><label>หมายเหตุ</label><input class="edit" value="${escapeHtml(t.note||"")}" data-f="note" placeholder="เพิ่มหมายเหตุ เช่น รอวัสดุ / ปัญหาที่พบ…"></div>
     </div>`;}).join("");
-  $("taskBody").querySelectorAll(".tcard").forEach(card=>{const i=+card.dataset.i;const T=()=>machineById(curMid).tasks[i];
+  $("taskBody").querySelectorAll(".tcard:not(.locked)").forEach(card=>{const i=+card.dataset.i;const T=()=>machineById(curMid).tasks[i];
     const li=card.querySelector('input[data-f=labor]'),rg=card.querySelector('.prg'),pv=card.querySelector('.pv'),badge=card.querySelector('.tc-badge');
     const setProg=v=>{v=Math.max(0,Math.min(100,+v));const t=T();t.prog=v;rg.value=v;
       const st=v>=100?"done":(v>0?"prog":"todo");pv.textContent=v+"%";pv.style.color=STCOL[st];
       card.className="tcard "+st;badge.textContent=STLABEL[st]+" · "+v+"%";badge.className="tc-badge s-"+st;
-      card.querySelectorAll('.qb').forEach(b=>b.classList.toggle('on',+b.dataset.q===v));
       refreshMini();scheduleSave();};
     rg.addEventListener('input',e=>setProg(e.target.value));
-    card.querySelectorAll('.qb').forEach(b=>b.addEventListener('click',()=>setProg(b.dataset.q)));
+    rg.addEventListener('change',()=>{if((+T().prog||0)>=100)renderTasks();}); // ครบ 100% แล้วล็อกเป็นดูอย่างเดียว
     card.querySelectorAll('.stp').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;li.dispatchEvent(new Event('input'));}));
     li.addEventListener('input',()=>{const t=T();t.labor=li.value===""?null:Math.max(0,+li.value);refreshWeights();scheduleSave();});
     const ni=card.querySelector('input[data-f=note]');ni.addEventListener('input',()=>{T().note=ni.value;scheduleSave();});

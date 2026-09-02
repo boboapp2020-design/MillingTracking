@@ -78,7 +78,7 @@ const $=id=>document.getElementById(id);
 function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
 /* ---- theme ---- */
-(function(){var t="dark";try{t=localStorage.getItem("mr_theme")||"dark";}catch(e){}document.documentElement.setAttribute("data-theme",t);})();
+(function(){var t="light";try{t=localStorage.getItem("mr_theme")||"light";}catch(e){}document.documentElement.setAttribute("data-theme",t);})();
 function wireCommon(){
   const bt=$("btnTheme");if(bt)bt.addEventListener("click",()=>{const r=document.documentElement;const cur=r.getAttribute("data-theme");const next=cur==="dark"?"light":(cur==="light"?"dark":(matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark"));r.setAttribute("data-theme",next);try{localStorage.setItem("mr_theme",next);}catch(e){}if(typeof onThemeChange==="function")onThemeChange();});
   const be=$("btnExport");if(be)be.addEventListener("click",()=>{const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download="milling_repair_"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(u);});
