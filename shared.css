@@ -10,22 +10,22 @@
   --ring:#e6eaf0; --hero1:#e8ebf0; --hero2:#f2f4f7;
 }
 :root[data-theme="dark"]{
-  --bg:#0e1319; --panel:#161d26; --panel2:#111821;
-  --ink:#e7edf3; --ink2:#95a3b3; --ink3:#66727f;
-  --line:#222c37; --line2:#2d3945;
-  --brand:#2bb7c9; --brand2:#199aab; --brandSoft:#123038;
-  --orange:#e08b3a; --green:#2fa96b; --amber:#d69a2c; --red:#e15a4a; --grey:#5e6b7a;
-  --shadow:0 1px 2px rgba(0,0,0,.45);
-  --shadowL:0 8px 26px rgba(0,0,0,.5);
-  --ring:#1c2632; --hero1:#141c25; --hero2:#0f151c;
+  --bg:#080b11; --panel:#111823; --panel2:#0c121b;
+  --ink:#eef4fa; --ink2:#9fb2c6; --ink3:#5f7186;
+  --line:#1b2530; --line2:#283542;
+  --brand:#26d4e8; --brand2:#15b6cb; --brandSoft:#0d2a31;
+  --orange:#ff9c3f; --green:#33d982; --amber:#f5c130; --red:#ff5f56; --grey:#5a6a7c;
+  --shadow:0 1px 2px rgba(0,0,0,.6);
+  --shadowL:0 14px 44px rgba(0,0,0,.66);
+  --ring:#172029; --hero1:#0e1520; --hero2:#0a0e15;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0e1319; --panel:#161d26; --panel2:#111821;
-  --ink:#e7edf3; --ink2:#95a3b3; --ink3:#66727f; --line:#222c37; --line2:#2d3945;
-  --brand:#2bb7c9; --brand2:#199aab; --brandSoft:#123038;
-  --orange:#e08b3a; --green:#2fa96b; --amber:#d69a2c; --red:#e15a4a; --grey:#5e6b7a;
-  --shadow:0 1px 2px rgba(0,0,0,.45); --shadowL:0 8px 26px rgba(0,0,0,.5);
-  --ring:#1c2632; --hero1:#141c25; --hero2:#0f151c;
+  --bg:#080b11; --panel:#111823; --panel2:#0c121b;
+  --ink:#eef4fa; --ink2:#9fb2c6; --ink3:#5f7186; --line:#1b2530; --line2:#283542;
+  --brand:#26d4e8; --brand2:#15b6cb; --brandSoft:#0d2a31;
+  --orange:#ff9c3f; --green:#33d982; --amber:#f5c130; --red:#ff5f56; --grey:#5a6a7c;
+  --shadow:0 1px 2px rgba(0,0,0,.6); --shadowL:0 14px 44px rgba(0,0,0,.66);
+  --ring:#172029; --hero1:#0e1520; --hero2:#0a0e15;
 }}
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -92,19 +92,23 @@ header.top{position:sticky;top:0;z-index:40;background:var(--panel);border-botto
 body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.62)),url("Background.jpg") center 42%/cover fixed}
 :root[data-theme="dark"] body.bgphoto,:root:not([data-theme="light"]) body.bgphoto{background:linear-gradient(rgba(10,15,21,.7),rgba(10,15,21,.8)),url("Background.jpg") center 42%/cover fixed}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]) body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.62)),url("Background.jpg") center 42%/cover fixed}}
-/* กรอบเครื่องจักร = การ์ดกระจกใส่เครื่องจักรบนพื้นขาว ใส เงา ลอยเหนือ backdrop */
-.card.hero{background:transparent;border:none;box-shadow:none}
-.hero-frame{position:relative;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.7);
-  background:rgba(255,255,255,.9);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-  box-shadow:0 14px 40px rgba(15,30,55,.28),inset 0 1px 0 rgba(255,255,255,.95)}
+/* กรอบเครื่องจักร = จอแสดงผลสว่าง ขอบ accent เรืองแสง (โมเดิร์น คมชัด) ลอยเหนือ backdrop เข้ม */
+.card.hero{background:transparent;border:none;box-shadow:none;padding:0}
+.hero-head{padding:0 4px}
+.hero-frame{position:relative;border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,#f7fafc,#e7edf3);
+  border:1px solid color-mix(in srgb,var(--brand) 55%,transparent);
+  box-shadow:0 22px 60px rgba(0,0,0,.5), 0 0 34px -12px var(--brand), inset 0 1px 0 rgba(255,255,255,.9)}
 .hero-frame::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 20%)}
+  background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 16%)}
 .hero-img{display:block;width:100%;height:auto;position:relative;z-index:2}
-:root[data-theme="dark"] .hero-frame,:root:not([data-theme="light"]) .hero-frame{background:rgba(22,29,38,.88);border-color:rgba(255,255,255,.08);box-shadow:0 14px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
-:root[data-theme="dark"] .hero-frame::after,:root:not([data-theme="light"]) .hero-frame::after{background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 20%)}
-:root[data-theme="dark"] .hero-img,:root:not([data-theme="light"]) .hero-img{filter:brightness(.92) contrast(1.02)}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .hero-frame{background:rgba(255,255,255,.9);border-color:rgba(255,255,255,.7);box-shadow:0 14px 40px rgba(15,30,55,.28),inset 0 1px 0 rgba(255,255,255,.95)}
-  :root:not([data-theme="dark"]) .hero-img{filter:none}}
+/* race วิ่งด้านบนเครื่องจักร ในกรอบเดียวกัน */
+.hero-frame .race{position:absolute;top:8px;left:18px;right:18px;height:52px;z-index:6;margin:0}
+.hero-frame .rtrack{top:32px;height:10px;right:34px;background:rgba(255,255,255,.75);border-color:rgba(20,40,60,.18)}
+.hero-frame .rtrack::before{opacity:.25}
+.hero-frame .rflag{top:-6px}
+.hero-frame .truck{bottom:0}
+.hero-frame .tkpct{top:-11px}
 .pinlayer{position:absolute;inset:0;z-index:4}
 .pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:4}
 .pin .dot{--p:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative;

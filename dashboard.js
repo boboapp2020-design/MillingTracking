@@ -62,8 +62,7 @@ function drawCurve(){const cv=$("scurve");if(!cv)return;const dpr=window.deviceP
   c.strokeStyle=cLine;c.lineWidth=1;c.fillStyle=cInk2;c.font="10px Sarabun,sans-serif";
   for(let v=0;v<=100;v+=25){const y=Y(v);c.beginPath();c.moveTo(padL,y);c.lineTo(W-padR,y);c.stroke();c.fillText(v+"%",6,y+3);}
   for(let s=s0;s<=s1;s++){const d=sd(s);if(d.getDate()===1||s===s0){const x=X(s);c.strokeStyle=cLine;c.beginPath();c.moveTo(x,padT);c.lineTo(x,padT+ph);c.stroke();c.fillText((d.getMonth()+1)+"/"+(d.getFullYear()+543).toString().slice(2),x+2,padT+ph+16);}}
-  const grad=c.createLinearGradient(0,padT,0,padT+ph);grad.addColorStop(0,"rgba(43,127,255,.22)");grad.addColorStop(1,"rgba(43,127,255,0)");
-  c.beginPath();c.moveTo(X(s0),Y(0));for(let s=s0;s<=s1;s++)c.lineTo(X(s),Y(planPctUpTo(s)));c.lineTo(X(s1),Y(0));c.closePath();c.fillStyle=grad;c.fill();
+  c.beginPath();c.moveTo(X(s0),Y(0));for(let s=s0;s<=s1;s++)c.lineTo(X(s),Y(planPctUpTo(s)));c.lineTo(X(s1),Y(0));c.closePath();c.save();c.globalAlpha=.16;c.fillStyle=cBrand;c.fill();c.restore();
   c.lineWidth=2.4;c.strokeStyle=cBrand;c.beginPath();let f=true;for(let s=s0;s<=s1;s++){const x=X(s),y=Y(planPctUpTo(s));f?(c.moveTo(x,y),f=false):c.lineTo(x,y);}c.stroke();
   const actNow=actualPct();
   // actual line from snapshots if available, else single ramp to today
@@ -92,7 +91,7 @@ function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=ne
     for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const nine=!off&&dt.getDay()>=1&&dt.getDay()<=5&&weekSatOff(dt);const cls=["cald"];if(off)cls.push("off");else if(nine)cls.push("h9");if(MS.has(ser))cls.push("ms");const mk=off?(dt.getDay()===0?"หยุด":"หยุด ส."):(nine?"9 ชม.":"");cells+=`<div class="${cls.join(" ")}"><div class="dn">${d}</div><div class="mk">${mk}</div></div>`;}
     return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");}
 
-function render(){renderPeriodBar();renderRace();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
+function render(){renderPeriodBar();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
 function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderGroups();renderAlerts();}
 async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();}
 async function loadSnaps(){const raw=await fetchSnapshots();if(!raw)return null;return raw.map(s=>({serial:serialOfDMY(s.date),overall:s.overall,plan:s.plan}));}
