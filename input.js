@@ -93,9 +93,12 @@ $("dReset").addEventListener("click",closeDrawer); // ปุ่มยกเล�
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("drawer").classList.contains("on"))closeDrawer();});
 
 /* ===== Log Book ===== */
-function renderLog(){const el=$("logList");if(!el)return;const logs=(DATA.logs||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+function renderLog(){const el=$("logList");if(!el)return;let logs=(DATA.logs||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
   const pc=logs.filter(L=>L.status==='pending').length;const pcEl=$("logPend");if(pcEl)pcEl.textContent=pc?("· รอตรวจสอบ "+pc+" รายการ"):"";
-  if(!logs.length){el.innerHTML='<div class="logempty">ยังไม่มีรายการบันทึก — กรอกความคืบหน้าที่เครื่องจักรแล้วกด “บันทึก”</div>';return;}
+  const fv=($("logFilter")||{}).value||"all";const q=(($("logSearch")||{}).value||"").trim().toLowerCase();
+  if(fv!=="all")logs=logs.filter(L=>L.status===fv);
+  if(q)logs=logs.filter(L=>((L.machineName||"")+" "+(L.taskName||"")+" "+(L.by||"")).toLowerCase().includes(q));
+  if(!logs.length){el.innerHTML='<div class="logempty">'+(DATA.logs&&DATA.logs.length?'ไม่พบรายการที่ค้นหา':'ยังไม่มีรายการบันทึก — กรอกความคืบหน้าที่เครื่องจักรแล้วกด “บันทึก”')+'</div>';return;}
   el.innerHTML=`<div class="logrow lhead"><div class="lg-date">วันที่</div><div class="lg-main">เครื่องจักร / งาน · ผู้บันทึก</div><div class="lg-num">คน</div><div class="lg-num">%</div><div class="lg-st">สถานะ</div></div>`+
     logs.map(L=>{const pend=L.status==='pending';const dt=fmtTaskDate(L);
     return `<div class="logrow ${pend?'pend':'appr'}" data-id="${L.id}">
@@ -138,6 +141,7 @@ function wireReview(){
   bind("rvPminus",()=>{rp.value=Math.max(0,(+rp.value||0)-1);rp.dispatchEvent(new Event('input'));});
   bind("rvPplus",()=>{rp.value=Math.min(100,(+rp.value||0)+1);rp.dispatchEvent(new Event('input'));});
   const rl=$("rvLabor");bind("rvLminus",()=>{rl.value=Math.max(0,(+rl.value||0)-1);});bind("rvLplus",()=>{rl.value=(+rl.value||0)+1;});
+  const lf=$("logFilter");if(lf)lf.addEventListener("change",renderLog);const lsr=$("logSearch");if(lsr)lsr.addEventListener("input",renderLog);
 }
 wireReview();
 

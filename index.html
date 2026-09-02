@@ -6,7 +6,7 @@
 <title>ระบบติดตามงานซ่อมลูกหีบ</title>
 <!-- ออฟไลน์ 100% : ไม่พึ่ง CDN / ฟอนต์ภายนอก · ภาพฝังแบบ data URI -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=21">
+<link rel="stylesheet" href="shared.css?v=22">
 </head>
 <body class="bgphoto">
 <header class="top">
@@ -64,7 +64,12 @@
   </div>
 
   <div class="card logbook">
-    <div class="hero-head"><div class="sec-ic"></div><h2>สมุดบันทึก (Log Book)</h2><span class="pill" id="logPend"></span></div>
+    <div class="hero-head"><div class="sec-ic"></div><h2>สมุดบันทึก (Log Book)</h2><span class="pill" id="logPend"></span>
+      <div class="logtools">
+        <select id="logFilter" class="logsel"><option value="all">ทั้งหมด</option><option value="pending">⏳ รอตรวจสอบ</option><option value="approved">✓ ตรวจแล้ว</option></select>
+        <input id="logSearch" class="logsearch" placeholder="🔍 ค้นหา เครื่อง / งาน / ผู้บันทึก">
+      </div>
+    </div>
     <div id="logList" class="loglist"></div>
   </div>
 
@@ -120,7 +125,7 @@
   <div class="dfoot"><button class="tbtn" id="rvCancel">ยกเลิก</button><button class="tbtn pri big" id="rvApprove">✓ ตรวจแล้ว (อนุมัติ)</button></div>
 </aside>
 
-<script src="shared.js?v=21"></script>
-<script src="input.js?v=21"></script>
+<script src="shared.js?v=22"></script>
+<script src="input.js?v=22"></script>
 </body>
 </html>

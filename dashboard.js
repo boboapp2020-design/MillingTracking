@@ -55,7 +55,14 @@ function renderAlerts(){const rows=[];jobs().forEach(m=>{const a=machineActual(m
   if(tNoS||tNoW)html+=`<div style="font-size:11px;color:var(--ink2);margin-top:8px;border-top:1px dashed var(--line);padding-top:9px">ต้องเติมข้อมูล: ${tNoW?`<b style="color:var(--amber)">${tNoW}</b> งานยังไม่ระบุ คน/วัน `:""}${tNoS?`· <b style="color:var(--amber)">${tNoS}</b> งานยังไม่ระบุวันที่`:""}</div>`;
   $("alerts").innerHTML=html;$("alerts").querySelectorAll(".alert[data-mid]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.mid)));}
 
-function drawCurve(){const cv=$("scurve");if(!cv)return;const dpr=window.devicePixelRatio||1;const W=cv.clientWidth||900,H=270;cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+function actualAtSerial(ser){const s0=projectRange().min;const actNow=actualPct();
+  const pts=(SNAPS||[]).filter(s=>s.serial!=null&&s.overall!=null).map(s=>[s.serial,s.overall]).sort((a,b)=>a[0]-b[0]);
+  if(pts.length){if(ser<=s0)return 0;if(ser<=pts[0][0])return pts[0][1]*(ser-s0)/Math.max(1,pts[0][0]-s0);
+    for(let i=1;i<pts.length;i++){if(ser<=pts[i][0]){const a=pts[i-1],b=pts[i];return a[1]+(b[1]-a[1])*(ser-a[0])/Math.max(1,b[0]-a[0]);}}
+    return pts[pts.length-1][1];}
+  if(ser<=s0)return 0;if(ser>=TODAY_SERIAL)return actNow;return actNow*(ser-s0)/Math.max(1,TODAY_SERIAL-s0);}
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.devicePixelRatio||1;const W=cv.clientWidth||900,H=270;cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
   const rng=projectRange();const s0=rng.min,s1=rng.max;const span=Math.max(1,s1-s0);const padL=38,padR=14,padT=14,padB=26;const pw=W-padL-padR,ph=H-padT-padB;
   const css=getComputedStyle(document.documentElement);const cInk2=css.getPropertyValue("--ink2"),cLine=css.getPropertyValue("--line"),cBrand=css.getPropertyValue("--brand"),cGreen=css.getPropertyValue("--green");
   const X=s=>padL+(s-s0)/span*pw,Y=v=>padT+(1-v/100)*ph;
@@ -72,6 +79,15 @@ function drawCurve(){const cv=$("scurve");if(!cv)return;const dpr=window.deviceP
     c.fillStyle=cGreen;pts.forEach(p=>{c.beginPath();c.arc(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1]),3.5,0,7);c.fill();});}
   else{c.moveTo(X(s0),Y(0));c.lineTo(X(Math.min(TODAY_SERIAL,s1)),Y(actNow));c.stroke();c.fillStyle=cGreen;c.beginPath();c.arc(X(Math.min(TODAY_SERIAL,s1)),Y(actNow),4.5,0,7);c.fill();}
   if(TODAY_SERIAL>=s0&&TODAY_SERIAL<=s1){const x=X(TODAY_SERIAL);c.setLineDash([4,4]);c.strokeStyle=cInk2;c.lineWidth=1.4;c.beginPath();c.moveTo(x,padT);c.lineTo(x,padT+ph);c.stroke();c.setLineDash([]);}
+  if(hoverX!=null&&hoverX>=padL&&hoverX<=W-padR){const sr=Math.max(s0,Math.min(s1,Math.round(s0+(hoverX-padL)/pw*span)));const x=X(sr);
+    const planV=planPctUpTo(sr),actV=actualAtSerial(sr);
+    c.setLineDash([3,3]);c.strokeStyle=cInk2;c.lineWidth=1;c.beginPath();c.moveTo(x,padT);c.lineTo(x,padT+ph);c.stroke();c.setLineDash([]);
+    c.fillStyle=cBrand;c.beginPath();c.arc(x,Y(planV),4.5,0,7);c.fill();c.fillStyle=cGreen;c.beginPath();c.arc(x,Y(actV),4.5,0,7);c.fill();
+    const d=sd(sr);const lines=[d.getDate()+"/"+(d.getMonth()+1)+"/"+(d.getFullYear()+543).toString().slice(2),"แผน "+planV.toFixed(1)+"%","จริง "+actV.toFixed(1)+"%"];
+    c.font="600 11px Sarabun,sans-serif";let tw=0;lines.forEach(L=>tw=Math.max(tw,c.measureText(L).width));
+    const bw=tw+18,bh=lines.length*16+10;let bx=x+12;if(bx+bw>W-padR)bx=x-bw-12;const by=padT+4;
+    c.fillStyle="rgba(18,26,38,.94)";roundRect(c,bx,by,bw,bh,7);c.fill();
+    c.textAlign="left";c.fillStyle="#fff";c.fillText(lines[0],bx+9,by+17);c.fillStyle=cBrand;c.fillText(lines[1],bx+9,by+33);c.fillStyle=cGreen;c.fillText(lines[2],bx+9,by+49);c.textAlign="start";}
   const ch=$("curveHint");if(ch)ch.textContent="แผน "+planPctUpTo(TODAY_SERIAL).toFixed(1)+"% · จริง "+actNow.toFixed(1)+"%"+(pts.length?` · ${pts.length} snapshot`:"");}
 
 /* ---- drill-down detail (read-only) ---- */
@@ -133,5 +149,8 @@ $("btnCal").addEventListener("click",()=>{const c=$("calCard");const show=c.styl
 $("dtClose").addEventListener("click",closeDetail);$("dtScrim").addEventListener("click",closeDetail);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("detail").classList.contains("on"))closeDetail();});
 window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTimeout(drawCurve,150);});
+(function(){const cv=$("scurve");if(!cv)return;cv.style.cursor="crosshair";
+  cv.addEventListener("mousemove",e=>{const r=cv.getBoundingClientRect();drawCurve(e.clientX-r.left);});
+  cv.addEventListener("mouseleave",()=>drawCurve());})();
 boot();
 loadSnaps().then(s=>{SNAPS=s;drawCurve();});
