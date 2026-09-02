@@ -38,6 +38,7 @@ let WAS_SEED=false;
 function load(){try{const r=localStorage.getItem(LS_KEY);if(r){const p=JSON.parse(r);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));return p;}}}catch(e){}WAS_SEED=true;return freshFromSeed();}
 /* รวมงานซ้ำ: สะพานแยกทราย = task เดียว (แก้ข้อมูลที่บันทึก/ซิงค์มาแล้วด้วย) */
 function normalizeData(d){try{if(!d||!d.groups)return d;
+  if(!Array.isArray(d.logs))d.logs=[]; // สมุดบันทึก (log book) รายการรอตรวจสอบ/ตรวจแล้ว
   d.groups.forEach(g=>(g.machines||[]).forEach(m=>{
     if(m.id==="psand"&&Array.isArray(m.tasks)&&m.tasks.length>1){const t0=m.tasks[0];t0.name="เช็คลูก Roller + เปลี่ยนลูก Roller + อัดจาระบีชุดขับ+ชุดตาม";m.tasks=[t0];}
   }));
@@ -141,13 +142,7 @@ function renderRace(){const t=$("truck");if(!t)return;
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
 const DESIGN_W=1340, MAX_SCALE=1.7;
 function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;
-  let s=Math.min(MAX_SCALE, vw/DESIGN_W);
-  if($("heroFrame")){ // หน้าแรก: fit ให้พอดีจอทั้งกว้างและสูง (เห็นทั้งหน้าในจอเดียว)
-    app.style.transform="none";const naturalH=app.scrollHeight||820;
-    const top=document.querySelector(".top");const topH=top?top.offsetHeight:0;
-    const availH=(window.innerHeight||800)-topH-10;
-    s=Math.min(vw/DESIGN_W, availH/naturalH, MAX_SCALE);
-  }
+  let s=Math.min(MAX_SCALE, vw/DESIGN_W); // fit ตามความกว้าง เลื่อนแนวตั้งได้ (มี Log Book ด้านล่าง)
   app.style.transform="scale("+s.toFixed(4)+")";
   app.style.marginLeft=Math.max(0,(vw-DESIGN_W*s)/2)+"px";
   const w=$("appWrap");if(w)w.style.height=app.getBoundingClientRect().height+"px";}

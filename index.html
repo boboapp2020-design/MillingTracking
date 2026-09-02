@@ -6,7 +6,7 @@
 <title>ระบบติดตามงานซ่อมลูกหีบ</title>
 <!-- ออฟไลน์ 100% : ไม่พึ่ง CDN / ฟอนต์ภายนอก · ภาพฝังแบบ data URI -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=19">
+<link rel="stylesheet" href="shared.css?v=20">
 </head>
 <body class="bgphoto">
 <header class="top">
@@ -63,6 +63,11 @@
     </div>
   </div>
 
+  <div class="card logbook">
+    <div class="hero-head"><div class="sec-ic"></div><h2>สมุดบันทึก (Log Book)</h2><span class="pill" id="logPend"></span></div>
+    <div id="logList" class="loglist"></div>
+  </div>
+
   </div>
 
 </div></div>
@@ -85,7 +90,37 @@
   </div>
 </aside>
 
-<script src="shared.js?v=19"></script>
-<script src="input.js?v=19"></script>
+<!-- PIN modal -->
+<div class="scrim" id="pinScrim"></div>
+<div class="pinmodal" id="pinModal" aria-hidden="true">
+  <div class="pin-h">🔒 ใส่ PIN 4 หลัก เพื่อเข้าตรวจสอบ</div>
+  <input id="pinBox" class="pin-in num" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">
+  <div class="pin-err" id="pinErr"></div>
+  <div class="pin-foot"><button class="tbtn" id="pinCancel">ยกเลิก</button><button class="tbtn pri" id="pinOk">ยืนยัน</button></div>
+</div>
+
+<!-- Review / approve modal -->
+<div class="scrim" id="rvScrim"></div>
+<aside class="drawer modal" id="rvModal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="dhead"><div><div class="dt" id="rvTitle">—</div><div class="ds" id="rvInfo">—</div></div><button class="xbtn" id="rvClose" title="ปิด">✕</button></div>
+  <div class="dbody">
+    <div class="tips">ตรวจสอบ/แก้ไขค่าได้ก่อนอนุมัติ — เมื่อกด “ตรวจแล้ว” ค่าจะไปแสดงบนหมุดและ Dashboard</div>
+    <div class="tcard">
+      <div class="tc-grid">
+        <div class="tc-fld"><label>จำนวนคน</label>
+          <div class="stepper"><button type="button" class="stp" id="rvLminus">−</button><input id="rvLabor" class="num edit" type="number" min="0" step="1" inputmode="numeric"><button type="button" class="stp" id="rvLplus">＋</button></div>
+        </div>
+        <div class="tc-fld grow"><label>ความคืบหน้า <b class="pv" id="rvProgV">0%</b></label>
+          <div class="prgrow"><button type="button" class="stpbtn" id="rvPminus">−</button><input id="rvProg" class="prg edit" type="range" min="0" max="100" step="1"><button type="button" class="stpbtn" id="rvPplus">＋</button></div>
+        </div>
+      </div>
+      <div class="tc-note"><label>หมายเหตุ</label><input id="rvNote" class="edit" placeholder="—"></div>
+    </div>
+  </div>
+  <div class="dfoot"><button class="tbtn" id="rvCancel">ยกเลิก</button><button class="tbtn pri big" id="rvApprove">✓ ตรวจแล้ว (อนุมัติ)</button></div>
+</aside>
+
+<script src="shared.js?v=20"></script>
+<script src="input.js?v=20"></script>
 </body>
 </html>

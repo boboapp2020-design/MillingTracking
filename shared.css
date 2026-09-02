@@ -272,6 +272,36 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .tasktbl input.edit:hover{border-color:var(--brand2)}
 .tasktbl input.edit:focus{border-color:var(--brand2);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 34%,transparent);background:#fff}
 .drawer .addbtn{display:none}
+.pendtag{flex:0 0 auto;font-size:12px;font-weight:700;color:#8a5a00;background:color-mix(in srgb,var(--amber) 22%,#fff);border:1px solid color-mix(in srgb,var(--amber) 48%,transparent);border-radius:20px;padding:3px 10px}
+/* ===== Log Book ===== */
+.logbook{margin-top:18px}
+.loglist{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.logempty{color:var(--ink2);font-size:14px;padding:18px 6px;text-align:center}
+.logrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;border:1px solid transparent;font-size:14px}
+.logrow:nth-child(even){background:var(--panel2)}
+.logrow.lhead{font-size:12px;color:var(--ink2);font-weight:700;background:transparent;border-bottom:2px solid var(--line2);border-radius:0;padding-bottom:8px}
+.logrow.pend{background:color-mix(in srgb,var(--amber) 10%,var(--panel));border-color:color-mix(in srgb,var(--amber) 32%,transparent)}
+.lg-date{flex:0 0 96px;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink2)}
+.lg-main{flex:1;min-width:0}
+.lg-task{font-weight:600;color:var(--ink)}
+.lg-meta{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.lg-num{flex:0 0 52px;text-align:right;font-family:"IBM Plex Mono",monospace}
+.lg-st{flex:0 0 132px;text-align:right}
+.lg-btn{display:inline-block;font-size:13px;font-weight:700;border-radius:20px;padding:6px 13px;border:none;white-space:nowrap}
+.lg-btn.pend{background:var(--amber);color:#3a2a00;cursor:pointer;box-shadow:0 3px 9px rgba(189,125,16,.3)}
+.lg-btn.pend:hover{filter:brightness(1.06)}
+.lg-btn.appr{background:color-mix(in srgb,var(--green) 16%,var(--panel));color:var(--green);border:1px solid color-mix(in srgb,var(--green) 35%,transparent)}
+/* ===== PIN modal ===== */
+.pinmodal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.94);opacity:0;pointer-events:none;z-index:52;
+  background:#fff;color:#141c27;border-radius:18px;border:1px solid #c9d2dd;box-shadow:0 40px 90px -24px rgba(6,12,22,.6);
+  padding:24px;width:min(360px,92vw);text-align:center;transition:opacity .18s,transform .2s;color-scheme:light}
+.pinmodal.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.pin-h{font-size:16px;font-weight:700;margin-bottom:16px;color:#141c27}
+.pin-in{width:190px;text-align:center;letter-spacing:14px;font-size:30px;font-weight:800;padding:10px 8px;border:2px solid var(--brand);border-radius:12px;background:#fff;color:#0e2b30;font-family:"IBM Plex Mono",monospace}
+.pin-in:focus{outline:none;box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 30%,transparent)}
+.pin-err{color:var(--red);font-size:13px;font-weight:600;height:18px;margin:9px 0 4px}
+.pin-foot{display:flex;gap:10px;justify-content:center;margin-top:6px}
+.pin-foot .tbtn{font-size:15px;padding:10px 22px}
 .rm{border:none;background:transparent;color:var(--grey);font-size:19px;padding:4px 8px;border-radius:7px}
 .rm:hover{color:var(--red);background:color-mix(in srgb,var(--red) 12%,transparent)}
 .note-flag{color:var(--amber);font-size:13px;margin-top:3px}
