@@ -88,10 +88,19 @@ header.top{position:sticky;top:0;z-index:40;background:var(--panel);border-botto
 .hero-head{display:flex;align-items:center;gap:10px;margin:0 4px 12px;flex-wrap:wrap}
 .hero-head h2{font-size:14.5px;font-weight:600}
 .hero-tools{margin-left:auto;display:flex;gap:8px}
-.hero-frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:var(--hero2)}
-.hero-img{display:block;width:100%;height:auto}
-:root[data-theme="dark"] .hero-img,:root:not([data-theme="light"]) .hero-img{filter:brightness(.92) contrast(1.02)}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .hero-img{filter:none}}
+.hero-frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line2);
+  background:#e7edf2 url("factory-bg.jpg") center 38%/cover no-repeat}
+.hero-frame::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(238,243,248,.28),rgba(238,243,248,.50) 62%,rgba(238,243,248,.68));
+  box-shadow:inset 0 0 130px 34px rgba(28,42,62,.22)}
+.hero-img{display:block;width:100%;height:auto;position:relative;z-index:2;
+  mix-blend-mode:multiply;filter:saturate(1.16) contrast(1.09)}
+:root[data-theme="dark"] .hero-frame,:root:not([data-theme="light"]) .hero-frame{background:var(--hero2)}
+:root[data-theme="dark"] .hero-frame::after,:root:not([data-theme="light"]) .hero-frame::after{background:none;box-shadow:inset 0 0 120px 30px rgba(0,0,0,.35)}
+:root[data-theme="dark"] .hero-img,:root:not([data-theme="light"]) .hero-img{mix-blend-mode:normal;filter:brightness(.92) contrast(1.03)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .hero-frame{background:#e7edf2 url("factory-bg.jpg") center 38%/cover no-repeat}
+  :root:not([data-theme="dark"]) .hero-frame::after{background:linear-gradient(180deg,rgba(238,243,248,.28),rgba(238,243,248,.50) 62%,rgba(238,243,248,.68));box-shadow:inset 0 0 130px 34px rgba(28,42,62,.22)}
+  :root:not([data-theme="dark"]) .hero-img{mix-blend-mode:multiply;filter:saturate(1.16) contrast(1.09)}}
 .pinlayer{position:absolute;inset:0;z-index:4}
 .pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:4}
 .pin .dot{--p:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative;
