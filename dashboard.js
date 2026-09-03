@@ -7,15 +7,19 @@ function fmtG(s){if(s==null)return"—";const d=sd(s);return String(d.getDate())
 function renderPeriodBar(){const rng=projectRange();const asof=new Date().toLocaleString("th-TH",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
   $("periodBar").innerHTML=`<span class="chip">ช่วงแผนงาน <b>${fmtTH(46276)} – ${fmtTH(46321)}</b></span><span class="chip">ขอบเขตงานจริง <b>${fmtTH(rng.min)} – ${fmtTH(rng.max)}</b></span><span class="chip">ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก man-hour (คน×ชม.จริง 8/9) · 10 Jobs = 100%</span>`;}
 
-function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=act-plan;const rng=projectRange();const daysLeft=rng.max-TODAY_SERIAL;const total=totalMandays();const spi=plan>0?act/plan:1;
-  let done=0,prog=0,todo=0;jobs().forEach(m=>{const s=machineStatus(m);if(s==="done")done++;else if(s==="prog")prog++;else todo++;});
-  const diffTag=diff>=0?`<span class="tag up">▲ +${diff.toFixed(1)}%</span>`:`<span class="tag down">▼ ${diff.toFixed(1)}%</span>`;
+function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=act-plan;const rng=projectRange();const spi=plan>0?act/plan:1;
+  // ค่าวันนี้ = เทียบกับ snapshot ล่าสุดก่อนวันนี้ (ถ้ามี) มิฉะนั้นเทียบจากต้นโครงการ
+  let baseAct=0,basePlan=0;
+  if(SNAPS&&SNAPS.length){const prev=SNAPS.filter(s=>s.serial!=null&&s.serial<TODAY_SERIAL).sort((a,b)=>b.serial-a.serial)[0];
+    if(prev){baseAct=+prev.overall||0;basePlan=planPctUpTo(prev.serial);}}
+  const actToday=Math.max(0,act-baseAct),planToday=Math.max(0,plan-basePlan),diffToday=actToday-planToday;
+  const nJobs=jobs().length;let done=0,prog=0,todo=0;jobs().forEach(m=>{const s=machineStatus(m);if(s==="done")done++;else if(s==="prog")prog++;else todo++;});
+  const tag=d=>d>=-0.05?`<span class="tag up">▲ +${Math.abs(d).toFixed(1)}%</span>`:`<span class="tag down">▼ ${d.toFixed(1)}%</span>`;
   $("kpis").innerHTML=`
-   <div class="card kpi g"><div class="ringwrap"><div class="ring" style="--p:${act.toFixed(1)}"><span>${act.toFixed(0)}%</span></div></div>
-     <div class="body"><div class="lab">ความคืบหน้าจริง (สะสม)</div><div class="val">${act.toFixed(1)}<small>%</small></div><div class="meta">งานรวม ${Math.round(total).toLocaleString()} man-hour</div></div></div>
-   <div class="card kpi b"><div class="ic">🎯</div><div class="body"><div class="lab">ตามแผน ณ วันนี้</div><div class="val">${plan.toFixed(1)}<small>%</small></div><div class="meta">${fmtTH(TODAY_SERIAL)} (วันนี้)</div></div></div>
-   <div class="card kpi ${diff>=0?'g':'o'}"><div class="ic">${diff>=0?'🚀':'🐢'}</div><div class="body"><div class="lab">ผลต่างจากแผน · SPI ${spi.toFixed(2)}</div><div class="val" style="font-size:26px">${diffTag}</div><div class="meta">${diff>=0?'เร็วกว่าแผน':'ช้ากว่าแผน'}</div></div></div>
-   <div class="card kpi a"><div class="ic">🛠️</div><div class="body"><div class="lab">สถานะ 10 Jobs</div><div class="val" style="font-size:20px"><span style="color:var(--green)">${done}</span> <small>เสร็จ</small> · <span style="color:var(--amber)">${prog}</span> <small>ทำ</small> · <span style="color:var(--grey)">${todo}</span> <small>รอ</small></div><div class="meta">เสร็จ ${fmtTH(rng.max)} · เหลือ ${daysLeft} วัน</div></div></div>`;}
+   <div class="card kpi ${diffToday>=-0.05?'g':'o'}"><div class="ic">📆</div><div class="body"><div class="lab">เกิดจริงวันนี้ · เทียบเป้าวันนี้</div><div class="val">${actToday.toFixed(1)}<small>%</small></div><div class="meta">เป้าวันนี้ <b>${planToday.toFixed(1)}%</b> · ${tag(diffToday)}</div></div></div>
+   <div class="card kpi ${diff>=-0.05?'g':'o'}"><div class="ringwrap"><div class="ring" style="--p:${act.toFixed(1)}"><span>${act.toFixed(0)}%</span></div></div><div class="body"><div class="lab">เกิดจริงสะสม · เทียบเป้าสะสม</div><div class="val">${act.toFixed(1)}<small>%</small></div><div class="meta">เป้าสะสม <b>${plan.toFixed(1)}%</b> · ${tag(diff)}</div></div></div>
+   <div class="card kpi ${spi>=1?'g':'o'}"><div class="ic">${spi>=1?'🚀':'🐢'}</div><div class="body"><div class="lab">ดัชนีตามแผน (SPI)</div><div class="val">${spi.toFixed(2)}</div><div class="meta">${spi>=1?'เร็ว / ตามแผน':'ช้ากว่าแผน'}</div></div></div>
+   <div class="card kpi b"><div class="ic">🛠️</div><div class="body"><div class="lab">จำนวนงานทั้งหมด</div><div class="val">${nJobs} <small>งาน</small></div><div class="meta"><span style="color:var(--green)">${done} เสร็จ</span> · <span style="color:var(--amber)">${prog} ทำ</span> · <span style="color:var(--grey)">${todo} รอ</span></div></div></div>`;}
 
 function renderJobsTable(){const total=totalMandays();
   const rows=jobs().map(m=>{const a=machineActual(m);return {m,name:m.name,weight:a.weight,plan:machinePlanPct(m),act:a.localPct,mh:a.rawMH,used:machineConsumedMH(m),st:machineStatus(m),owner:m.owner};});
@@ -150,7 +154,7 @@ function renderForecast(){const el=$("forecast");if(!el)return;const rng=project
     </div></div>`;}
 function render(){renderPeriodBar();renderForecast();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
 function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderGroups();renderAlerts();}
-async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();}
+async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();renderKPI();}
 async function loadSnaps(){const raw=await fetchSnapshots();if(!raw)return null;return raw.map(s=>({serial:serialOfDMY(s.date),overall:s.overall,plan:s.plan}));}
 function serialOfDMY(str){if(!str)return null;const s=String(str);const p=s.split("/");if(p.length>=3&&p[2].length<=4)return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));const d=new Date(s);return isNaN(d)?null:dToSerial(new Date(d.getFullYear(),d.getMonth(),d.getDate()));}
 
@@ -163,4 +167,4 @@ window.addEventListener("resize",()=>{clearTimeout(window._rz);window._rz=setTim
   cv.addEventListener("mousemove",e=>{const r=cv.getBoundingClientRect();drawCurve(e.clientX-r.left);});
   cv.addEventListener("mouseleave",()=>drawCurve());})();
 boot();
-loadSnaps().then(s=>{SNAPS=s;drawCurve();});
+loadSnaps().then(s=>{SNAPS=s;drawCurve();renderKPI();});
