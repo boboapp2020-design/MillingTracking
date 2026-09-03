@@ -64,7 +64,12 @@ function normalizeData(d){try{if(!d||!d.groups)return d;
   }
 }catch(e){}return d;}
 function mergeLogs(remoteLogs){if(!Array.isArray(remoteLogs)||!Array.isArray(DATA.logs))return 0;const have={};DATA.logs.forEach(function(L){have[L.id]=1;});var added=0;remoteLogs.forEach(function(L){if(L&&L.id&&!have[L.id]){DATA.logs.push(L);added++;}});return added;}
-let DATA=normalizeData(load());
+/* ---- แหล่งความจริงของ % งาน = log ที่ "ตรวจแล้ว" ---- นำค่าที่อนุมัติแล้วไปเขียนลง task เสมอ (กัน % หายเวลา sync/merge) */
+function applyApprovedLogs(){if(!DATA||!Array.isArray(DATA.logs))return 0;const agg={};
+  DATA.logs.forEach(function(L){if(!L||L.status!=="approved"||!L.mid)return;const k=L.mid+"|"+L.ti;if(!agg[k])agg[k]={prog:0,ts:-1,labor:null,note:null};const a=agg[k];if((+L.prog||0)>a.prog)a.prog=+L.prog||0;if((L.ts||0)>a.ts){a.ts=L.ts||0;if(L.labor!=null&&L.labor!=="")a.labor=+L.labor;if(L.note!=null)a.note=L.note;}});
+  var changed=0;Object.keys(agg).forEach(function(k){const p=k.split("|"),m=machineById(p[0]),ti=+p[1];if(!m||!m.tasks||!m.tasks[ti])return;const t=m.tasks[ti],a=agg[k];const np=Math.max(+t.prog||0,a.prog);if(np!==(+t.prog||0)){t.prog=np;changed++;}if(a.labor!=null&&t.labor!==a.labor){t.labor=a.labor;changed++;}if(a.note!=null&&a.note!==""&&t.note!==a.note){t.note=a.note;changed++;}});
+  return changed;}
+let DATA=normalizeData(load());applyApprovedLogs();
 let saveTimer=null;
 function save(){DATA.updated=Date.now();try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}const st=$("saveTxt");if(st)st.textContent="บันทึกแล้ว "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});}
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,400);if(typeof schedulePush==="function")schedulePush();}
@@ -105,7 +110,7 @@ function wireCommon(){
   const bt=$("btnTheme");if(bt)bt.addEventListener("click",()=>{const r=document.documentElement;const cur=r.getAttribute("data-theme");const next=cur==="dark"?"light":(cur==="light"?"dark":(matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark"));r.setAttribute("data-theme",next);try{localStorage.setItem("mr_theme",next);}catch(e){}if(typeof onThemeChange==="function")onThemeChange();});
   const be=$("btnExport");if(be)be.addEventListener("click",()=>{const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download="milling_repair_"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(u);});
   const bi=$("btnImport");if(bi)bi.addEventListener("click",()=>$("fileIn").click());
-  const fi=$("fileIn");if(fi)fi.addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(p);save();render();alert("นำเข้าข้อมูลสำเร็จ");}else alert("ไฟล์ไม่ถูกต้อง");}catch(err){alert("อ่านไฟล์ไม่ได้");}};r.readAsText(f);e.target.value="";});
+  const fi=$("fileIn");if(fi)fi.addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(p);applyApprovedLogs();save();render();alert("นำเข้าข้อมูลสำเร็จ");}else alert("ไฟล์ไม่ถูกต้อง");}catch(err){alert("อ่านไฟล์ไม่ได้");}};r.readAsText(f);e.target.value="";});
 }
 
 /* ---- Google Sheet sync (Apps Script backend) — URL ฝังไว้ถาวร ผู้ใช้แก้ไม่ได้ ---- */
@@ -156,8 +161,8 @@ async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetc
 async function pullRemote(silent,force){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
   try{const res=await fetch(syncGet());const j=await res.json();
     if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;const localT=DATA.updated||0,remoteT=remote.updated||0;const localFresh=WAS_SEED;
-      if(force||remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(remote);save();render();}
-      else{const added=mergeLogs(remote.logs);if(added){save();if(typeof render==="function")render();}} // local ใหม่กว่า แต่ merge log จากชีทเข้ามา (กัน log หาย)
+      if(force||remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(remote);applyApprovedLogs();save();render();}
+      else{const added=mergeLogs(remote.logs);const applied=applyApprovedLogs();if(added||applied){save();if(typeof render==="function")render();}} // local ใหม่กว่า แต่ merge log จากชีท + apply ค่าที่ตรวจแล้ว (กัน log/% หาย)
       lastSync=new Date();setSyncBtn("ok","ดึงข้อมูลจากชีทแล้ว "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));return true;}
     setSyncBtn("err","ชีทยังไม่มีข้อมูล");return false;
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้");return false;}
