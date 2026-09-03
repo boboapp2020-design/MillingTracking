@@ -1,13 +1,13 @@
 /* Service Worker — ระบบติดตามงานซ่อมลูกหีบ (PWA) */
 /* กลยุทธ์: network-first สำหรับไฟล์ในเว็บ (ได้ของสดเสมอเมื่อออนไลน์) · ออฟไลน์ค่อยใช้ cache
    ไม่ยุ่งกับ cross-origin (Google Sheet sync / Google Fonts) ปล่อยให้ผ่าน network ปกติ */
-const VER = 'v37';
+const VER = 'v38';
 const CACHE = 'milling-' + VER;
 const SHELL = [
   './', 'index.html', 'dashboard.html',
-  'shared.css?v=37', 'shared.js?v=37', 'input.js?v=37', 'dashboard.js?v=37',
+  'shared.css?v=38', 'shared.js?v=38', 'input.js?v=38', 'dashboard.js?v=38',
   'logo.png', 'milling.png', 'truck.png',
-  'icon-192.png?v=37', 'icon-512.png?v=37', 'manifest.webmanifest?v=37'
+  'icon-192.png?v=38', 'icon-512.png?v=38', 'manifest.webmanifest?v=38'
 ];
 
 self.addEventListener('install', function (e) {

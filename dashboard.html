@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard — งานซ่อมลูกหีบ</title>
-<link rel="icon" type="image/png" href="logo.png?v=37">
-<link rel="apple-touch-icon" href="icon-192.png?v=37">
-<link rel="manifest" href="manifest.webmanifest?v=37">
+<link rel="icon" type="image/png" href="logo.png?v=38">
+<link rel="apple-touch-icon" href="icon-192.png?v=38">
+<link rel="manifest" href="manifest.webmanifest?v=38">
 <meta name="theme-color" content="#0e7c8b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ซ่อมลูกหีบ">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=37">
+<link rel="stylesheet" href="shared.css?v=38">
 <style>
 .jtbl{width:100%;border-collapse:collapse;font-size:13px}
 .jtbl th{font-size:11px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 8px;border-bottom:2px solid var(--line)}
@@ -29,10 +29,10 @@
 .drill{border:1px solid var(--line2);background:var(--panel2);color:var(--brand);font-size:11.5px;font-weight:600;border-radius:7px;padding:4px 9px;cursor:pointer}
 .drill:hover{border-color:var(--brand)}
 .tblwrap{overflow-x:auto}
-.dttbl{width:100%;border-collapse:collapse}
-.dttbl th{font-size:10.5px;color:var(--ink2);font-weight:700;text-align:left;padding:6px 6px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.dttbl{width:100%;border-collapse:separate;border-spacing:0}
+.dttbl th{font-size:10.5px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 6px;position:sticky;top:0;background:var(--panel);z-index:3;box-shadow:inset 0 -2px 0 var(--line2)}
 .dttbl th.rt,.dttbl td.rt{text-align:right;white-space:nowrap}
-.dttbl td{padding:6px 6px;border-bottom:1px solid var(--line);font-size:12px}
+.dttbl td{padding:7px 6px;border-bottom:1px solid var(--line);font-size:12px}
 .dttbl tbody tr:hover td{background:var(--panel2)}
 #detail .dbody{padding:12px 16px 40px}
 /* forecast banner (ผู้บริหาร) */
@@ -175,13 +175,40 @@ body.dash .cald .calrec{box-shadow:0 2px 6px -1px rgba(31,138,76,.6)}
 
 /* หัวข้อ section คมขึ้น */
 body.dash .sec-title h2{letter-spacing:-.2px}
+
+/* ===== Drill-down panel (drawer รายละเอียดเครื่อง) ให้เข้าธีมโมเดิร์น ===== */
+body.dash #detail.drawer{
+  background:linear-gradient(180deg,#ffffff,#f4f8fc);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), 0 44px 100px -26px rgba(6,12,22,.62), 0 0 0 1px rgba(206,214,223,.4)}
+body.dash #detail .dhead{background:linear-gradient(180deg,#eef5fb,#ffffff);position:relative}
+body.dash #detail .dhead::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--brand),transparent)}
+/* 3 การ์ดสถิติ (man-hour) แบบ KPI: glass + แถบสี + แสงเรืองมุม + ยกตัว */
+body.dash #detail .dmini .m{
+  position:relative;overflow:hidden;border-radius:16px;padding:15px 16px 14px;
+  background:linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0) 46%), linear-gradient(180deg,#ffffff,#eef4fa);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(206,214,223,.4), 0 2px 5px rgba(16,42,60,.05), 0 14px 30px -16px rgba(16,42,60,.3);
+  transition:transform .22s cubic-bezier(.22,.61,.36,1), box-shadow .22s}
+body.dash #detail .dmini .m:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 #fff, 0 3px 8px rgba(16,42,60,.07), 0 22px 44px -18px rgba(16,42,60,.4)}
+body.dash #detail .dmini .m::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+body.dash #detail .dmini .m:nth-child(1)::before{background:linear-gradient(180deg,var(--brand),var(--brand2))}
+body.dash #detail .dmini .m:nth-child(2)::before{background:linear-gradient(180deg,#e9b53f,#b6790f)}
+body.dash #detail .dmini .m:nth-child(3)::before{background:linear-gradient(180deg,#33d873,#159048)}
+body.dash #detail .dmini .m::after{content:"";position:absolute;right:-28px;top:-28px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(14,124,139,.12),transparent 70%);pointer-events:none}
+body.dash #detail .dmini .m:nth-child(2)::after{background:radial-gradient(circle,rgba(189,125,16,.14),transparent 70%)}
+body.dash #detail .dmini .m:nth-child(3)::after{background:radial-gradient(circle,rgba(31,138,76,.14),transparent 70%)}
+body.dash #detail .dmini .m .v{font-size:27px;letter-spacing:-.5px}
+/* ตารางรายละเอียด: หัวเงาทึบ (จำเป็นต่อ sticky) แถว hover นุ่ม */
+body.dash #detail .dttbl th{background:linear-gradient(180deg,#ffffff,#eef3f8);box-shadow:inset 0 -2px 0 var(--line2);z-index:4}
+body.dash #detail .dttbl tbody tr:hover td{background:linear-gradient(90deg,color-mix(in srgb,var(--brand) 8%,transparent),transparent)}
 </style>
 </head>
 <body class="bgphoto dash">
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <img class="logo" src="logo.png?v=37" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
+      <img class="logo" src="logo.png?v=38" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
       <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
       <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
@@ -254,8 +281,8 @@ body.dash .sec-title h2{letter-spacing:-.2px}
   <div class="dbody tblwrap" id="dtBody"></div>
 </aside>
 
-<script src="shared.js?v=37"></script>
-<script src="dashboard.js?v=37"></script>
+<script src="shared.js?v=38"></script>
+<script src="dashboard.js?v=38"></script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>
