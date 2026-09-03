@@ -30,7 +30,7 @@ $("resetPins").addEventListener("click",e=>{e.preventDefault();if(!confirm("ร�
 let curMid=null;
 function openDrawer(mid){if(editPins)return;curMid=mid;const m=machineById(mid);if(!m)return;const g=groupOf(m);
   $("dTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');$("dSub").textContent=g.name+" · "+m.tasks.length+" งาน";
-  const ow=$("dOwner");ow.value=m.owner||"";ow.oninput=()=>{m.owner=ow.value;scheduleSave();};
+  const ow=$("dOwner");ow.value=m.owner||"";ow.classList.remove("req-err");ow.oninput=()=>{m.owner=ow.value;ow.classList.remove("req-err");scheduleSave();};
   renderTasks();$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
 function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;renderDiagram();}
 function dmy(serial){const s=isoOf(serial);if(!s)return "—";const p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
@@ -78,15 +78,18 @@ function renderTasks(){const m=machineById(curMid);
     card.querySelectorAll('.pstp').forEach(b=>b.addEventListener('click',()=>setP((+rg.value||0)+(+b.dataset.pstp))));
     card.querySelectorAll('[data-stp]').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;}));
   });}
-function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}let n=0;
+function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}
+  const who=(m.owner||"").trim(); // บังคับลงชื่อผู้บันทึก
+  if(!who){const ow=$("dOwner");if(ow){ow.classList.add("req-err");ow.focus();ow.scrollIntoView({block:"center"});}notify("ต้องลงชื่อผู้บันทึก","กรุณากรอก “ชื่อผู้บันทึก” ก่อนกดบันทึกทุกครั้ง","err");return;}
+  let n=0;
   $("taskBody").querySelectorAll(".tcard:not(.locked)").forEach(card=>{const i=+card.dataset.i;const t=m.tasks[i];
     const prog=Math.max(+t.prog||0,Math.max(0,Math.min(100,Math.round(+card.querySelector('.prg').value||0)))); // ไม่ต่ำกว่าที่ตรวจแล้ว
     const lv=card.querySelector('input[data-f=labor]').value;const labor=lv===""?null:Math.max(0,+lv);
     const note=card.querySelector('input[data-f=note]').value;
     const changed=prog!==(+t.prog||0)||labor!==(t.labor??null)||(note||"")!==(t.note||"");
     let pend=pendingFor(curMid,i);
-    if(changed){if(pend){pend.prog=prog;pend.labor=labor;pend.note=note;pend.by=m.owner||"ไม่ระบุ";pend.date=snapDateStr();pend.ts=Date.now();}
-      else{DATA.logs.push({id:"L"+Date.now()+"_"+i,mid:curMid,ti:i,taskName:t.name,machineName:m.name,by:m.owner||"ไม่ระบุ",prog,labor,note,date:snapDateStr(),ts:Date.now(),status:"pending"});}n++;}
+    if(changed){if(pend){pend.prog=prog;pend.labor=labor;pend.note=note;pend.by=who;pend.date=snapDateStr();pend.ts=Date.now();}
+      else{DATA.logs.push({id:"L"+Date.now()+"_"+i,mid:curMid,ti:i,taskName:t.name,machineName:m.name,by:who,prog,labor,note,date:snapDateStr(),ts:Date.now(),status:"pending"});}n++;}
     else if(pend){DATA.logs=DATA.logs.filter(L=>L!==pend);} // กลับเท่าเดิม → ถอนรายการ
   });
   scheduleSave();renderLog();closeDrawer();

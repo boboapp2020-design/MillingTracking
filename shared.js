@@ -174,9 +174,11 @@ function renderRace(){const t=$("truck");if(!t)return;
   t.style.left=cx;
   const pc=$("tkPct");if(pc)pc.style.left=cx;    /* ป้าย % เคลื่อนตามรถ */
   const fl=$("raceFill");if(fl)fl.style.width=(4+87*f).toFixed(2)+"%"; /* ไฟเรืองแสงบอกระยะที่วิ่งไปแล้ว */
-  const pct=$("tkPct");if(pct)pct.textContent=p.toFixed(1)+"%";
+  const target=Math.max(0,Math.min(100,planPctUpTo(TODAY_SERIAL))); // เป้าหมายภาพรวม ณ วันนี้
+  const onTrack=p>=target-0.05;                                     // ได้ตามเป้า/เกิน = เขียว · ต่ำกว่า = แดง
+  const pct=$("tkPct");if(pct){pct.textContent=p.toFixed(1)+"%";pct.classList.toggle("ok",onTrack);pct.classList.toggle("behind",!onTrack);}
   const done=p>=99.95;t.classList.toggle("done",done);
-  const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":"วิ่งไปแล้ว "+p.toFixed(0)+"% ของเส้นชัย";}
+  const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":(onTrack?"ตามเป้า ✓ (เป้า ณ วันนี้ "+target.toFixed(1)+"%)":"ต่ำกว่าเป้า (เป้า ณ วันนี้ "+target.toFixed(1)+"%)");}
 
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
 const DESIGN_W=1340, MAX_SCALE=1.7;
