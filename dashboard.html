@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard — งานซ่อมลูกหีบ</title>
-<link rel="icon" type="image/png" href="logo.png?v=36">
-<link rel="apple-touch-icon" href="icon-192.png?v=36">
-<link rel="manifest" href="manifest.webmanifest?v=36">
+<link rel="icon" type="image/png" href="logo.png?v=37">
+<link rel="apple-touch-icon" href="icon-192.png?v=37">
+<link rel="manifest" href="manifest.webmanifest?v=37">
 <meta name="theme-color" content="#0e7c8b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ซ่อมลูกหีบ">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=36">
+<link rel="stylesheet" href="shared.css?v=37">
 <style>
 .jtbl{width:100%;border-collapse:collapse;font-size:13px}
 .jtbl th{font-size:11px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 8px;border-bottom:2px solid var(--line)}
@@ -65,13 +65,123 @@
 .dvmeta{font-size:12.5px;color:var(--ink2);margin-top:2px}
 .dvpct{flex:0 0 50px;text-align:right;font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:700}
 #dvBody{padding:14px 20px 22px}
+
+/* ============================================================
+   MODERN GLOSSY SKIN — เฉพาะหน้า Dashboard (body.dash)
+   glass + เงาหลายชั้น + ไฮไลต์แวววาว + มิติ + คมชัด
+   ============================================================ */
+body.dash{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+
+/* backdrop: ภาพโรงงาน + แสงเรืองสีแบรนด์มุมบน ให้ดูพรีเมียม */
+body.dash.bgphoto{background:
+  radial-gradient(1200px 620px at 12% -12%, rgba(14,124,139,.20), transparent 58%),
+  radial-gradient(1000px 520px at 104% -6%, rgba(31,138,76,.13), transparent 55%),
+  linear-gradient(rgba(232,236,242,.60),rgba(226,231,239,.74)),
+  url("Background.jpg") center 42%/cover fixed}
+:root[data-theme="dark"] body.dash.bgphoto,:root:not([data-theme="light"]) body.dash.bgphoto{background:
+  radial-gradient(1200px 620px at 12% -12%, rgba(40,214,234,.16), transparent 58%),
+  radial-gradient(1000px 520px at 104% -6%, rgba(31,138,76,.14), transparent 55%),
+  linear-gradient(rgba(22,24,28,.78),rgba(17,19,22,.88)),
+  url("Background.jpg") center 42%/cover fixed}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) body.dash.bgphoto{background:
+  radial-gradient(1200px 620px at 12% -12%, rgba(14,124,139,.20), transparent 58%),
+  radial-gradient(1000px 520px at 104% -6%, rgba(31,138,76,.13), transparent 55%),
+  linear-gradient(rgba(232,236,242,.60),rgba(226,231,239,.74)),
+  url("Background.jpg") center 42%/cover fixed}}
+
+/* การ์ดกระจก (glass) — เงาลึกหลายชั้น + ขอบสว่าง + ผิวเงาด้านบน */
+body.dash .card{
+  position:relative;overflow:hidden;border-radius:18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.46), rgba(255,255,255,0) 44%),
+    linear-gradient(180deg, rgba(255,255,255,.95), rgba(248,250,253,.90));
+  -webkit-backdrop-filter:blur(13px) saturate(1.25);backdrop-filter:blur(13px) saturate(1.25);
+  border:1px solid rgba(255,255,255,.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 0 0 1px rgba(206,214,223,.45),
+    0 2px 6px rgba(16,42,60,.05),
+    0 20px 44px -20px rgba(16,42,60,.34);
+  transition:box-shadow .28s cubic-bezier(.22,.61,.36,1), transform .28s cubic-bezier(.22,.61,.36,1)}
+body.dash .card:hover{transform:translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 0 0 1px rgba(206,214,223,.6),
+    0 4px 10px rgba(16,42,60,.07),
+    0 30px 60px -22px rgba(16,42,60,.44)}
+:root[data-theme="dark"] body.dash .card,:root:not([data-theme="light"]) body.dash .card{
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 44%), linear-gradient(180deg, rgba(43,47,54,.86), rgba(33,36,42,.82));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 2px 6px rgba(0,0,0,.3), 0 22px 46px -20px rgba(0,0,0,.6)}
+
+/* KPI cards — มิติเด่น: แถบสีไล่เฉด + แสงเรืองมุม + ยกตัวตอน hover */
+body.dash .kpi{border-left:0;border-radius:16px;padding:17px 18px 16px}
+body.dash .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;
+  background:linear-gradient(180deg,var(--brand),var(--brand2));box-shadow:0 0 16px -2px rgba(14,124,139,.7)}
+body.dash .kpi.g::before{background:linear-gradient(180deg,#33d873,#159048);box-shadow:0 0 16px -2px rgba(31,180,90,.75)}
+body.dash .kpi.a::before{background:linear-gradient(180deg,#e9b53f,#b6790f);box-shadow:0 0 16px -2px rgba(220,150,20,.7)}
+body.dash .kpi.o::before{background:linear-gradient(180deg,#f0913f,#c2610c);box-shadow:0 0 16px -2px rgba(210,110,20,.7)}
+body.dash .kpi::after{content:"";position:absolute;right:-34px;top:-34px;width:132px;height:132px;border-radius:50%;
+  background:radial-gradient(circle, rgba(14,124,139,.16), transparent 70%);pointer-events:none}
+body.dash .kpi.g::after{background:radial-gradient(circle, rgba(31,138,76,.18), transparent 70%)}
+body.dash .kpi.a::after{background:radial-gradient(circle, rgba(189,125,16,.18), transparent 70%)}
+body.dash .kpi.o::after{background:radial-gradient(circle, rgba(194,97,12,.18), transparent 70%)}
+body.dash .kpi:hover{transform:translateY(-4px)}
+body.dash .kpi .val{font-size:33px;letter-spacing:-1.2px;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+:root[data-theme="dark"] body.dash .kpi .val,:root:not([data-theme="light"]) body.dash .kpi .val{text-shadow:0 1px 2px rgba(0,0,0,.5)}
+body.dash .kpi .lab{letter-spacing:.5px}
+
+/* วงแหวน % ให้มีเงา/มิติ */
+body.dash .kpi .ring{box-shadow:0 5px 12px -5px rgba(16,42,60,.5), inset 0 0 0 1px rgba(255,255,255,.4);filter:saturate(1.15)}
+
+/* pills แวววาว */
+body.dash .pill{background:linear-gradient(180deg,#ffffff,var(--panel2));border:1px solid var(--line);
+  box-shadow:0 1px 2px rgba(16,42,60,.06), inset 0 1px 0 rgba(255,255,255,.9)}
+
+/* ปุ่มบนหัว — ผิวเงา ปุ่มหลักไล่เฉด+เรืองแสง */
+body.dash .tbtn{background:linear-gradient(180deg,#ffffff,#edf1f6);
+  box-shadow:0 1px 2px rgba(16,42,60,.08), inset 0 1px 0 rgba(255,255,255,.85);transition:.18s}
+body.dash .tbtn:hover{transform:translateY(-1px);box-shadow:0 4px 12px -4px rgba(14,124,139,.5), inset 0 1px 0 rgba(255,255,255,.85)}
+body.dash .tbtn.pri{background:linear-gradient(180deg,#12a0b3,var(--brand2));border-color:var(--brand2);
+  box-shadow:0 6px 16px -6px rgba(14,124,139,.75), inset 0 1px 0 rgba(255,255,255,.4)}
+body.dash .tbtn.pri:hover{background:linear-gradient(180deg,#14aec2,#0a5f6b)}
+
+/* แถบช่วงแผนงาน (period bar) เป็นกระจกบางๆ */
+body.dash .periodbar{border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 60%), linear-gradient(180deg, rgba(255,255,255,.9), rgba(247,249,252,.82));
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 10px 26px -14px rgba(16,42,60,.28)}
+
+/* Forecast banner — glass + เรืองแสง + ผิวเงา */
+body.dash .fc{border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 42%), linear-gradient(180deg,var(--panel),var(--panel2));
+  -webkit-backdrop-filter:blur(12px) saturate(1.2);backdrop-filter:blur(12px) saturate(1.2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), 0 22px 46px -20px rgba(16,42,60,.36)}
+body.dash .fc-verdict{letter-spacing:-.3px}
+
+/* ตารางงาน — หัวตารางไล่เฉด แถวไฮไลต์นุ่ม เส้นคม */
+body.dash .jtbl th{background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(243,245,248,.5));border-bottom:2px solid var(--line2)}
+body.dash .jtbl tbody tr{transition:.15s}
+body.dash .jtbl tbody tr:hover td{background:linear-gradient(90deg,color-mix(in srgb,var(--brand) 8%,transparent),transparent)}
+body.dash .chipst{box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 1px 2px rgba(16,42,60,.08)}
+body.dash .drill{background:linear-gradient(180deg,#fff,var(--panel2));box-shadow:0 1px 2px rgba(16,42,60,.06), inset 0 1px 0 #fff}
+body.dash .drill:hover{box-shadow:0 4px 10px -3px rgba(14,124,139,.45)}
+
+/* ปฏิทิน — วันมีบันทึกเรืองเขียว, hover ยกตัว */
+body.dash .cald{border-radius:9px;transition:.14s}
+body.dash .cald.hasrec{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--green) 55%,transparent), 0 4px 12px -6px rgba(31,138,76,.5)}
+body.dash .cald.clk:hover{transform:translateY(-2px)}
+body.dash .cald .calrec{box-shadow:0 2px 6px -1px rgba(31,138,76,.6)}
+
+/* หัวข้อ section คมขึ้น */
+body.dash .sec-title h2{letter-spacing:-.2px}
 </style>
 </head>
-<body class="bgphoto">
+<body class="bgphoto dash">
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <img class="logo" src="logo.png?v=36" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
+      <img class="logo" src="logo.png?v=37" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
       <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
       <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
@@ -144,8 +254,8 @@
   <div class="dbody tblwrap" id="dtBody"></div>
 </aside>
 
-<script src="shared.js?v=36"></script>
-<script src="dashboard.js?v=36"></script>
+<script src="shared.js?v=37"></script>
+<script src="dashboard.js?v=37"></script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>
