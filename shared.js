@@ -17,7 +17,7 @@ const SEED={groups:[
     {id:"m1",name:"ลูกหีบ ชุดที่ 1",tasks:[["Setting ลูกหีบ ตั้ง A2,A3",1,4,46266,46266],["ลงหวีซอง",4,4,46267,46270],["ประกอบเฟืองลูกหีบ+ขัดเพลาลูกหีบ",1,4,46272,46272],["ลงลูกป้อนบน (PF)+ประกอบแบริ่ง",3,4,46273,46275],["Setting ลูกหีบ ตั้ง A1",2,4,46277,46279],["ลงหวีกลาง+Setting ตั้ง C1,C2,C3",3,4,46280,46282],["ลง UF",1,4,46283,46283],["Setting ลูกหีบ B1",1,4,46284,46284],["ยกลูก top",1,4,46286,46286],["ประกอบไฮดรอลิคกดหัวลูกหีบ",1,4,46287,46287],["ประกอบ Tailbar + box couping ลูก top",1,4,46288,46288],["ประกอบ Tailbar + box couping ป้อนล่าง 1",1,4,46289,46289],["เข้างานติดตั้งสายจาระบีลูกหีบ",2,2,46290,46291],["เข้างานติดตั้งสายน้ำ Cooling",2,2,46293,46294],["ประกอบถาดน้ำมันลูกหีบ",1,2,46290,46290],["ประกอบโซ่+Spocket+Cover",1,4,46295,46295],["ประกอบชู๊ท+ตั้งระยะเปิด",3,4,46296,46298]]},
     {id:"m2",name:"ลูกหีบ ชุดที่ 2",tasks:[["ลูกหีบชุด 2 Plan เข้า",1,4,46284,46285],["ประกอบบังไบ",1,4,46288,46288],["ประกอบ Shap",1,4,46289,46289],["ประกอบเฟืองลูกหน้า",1,4,46290,46290],["ยกลูกหีบลงแท่น",1,4,46291,46291],["ลงลูกป้อนบน (PF)+ประกอบแบริ่ง",1,4,46293,46293],["Setting A2,A3",1,4,46294,46294],["ประกอบหวีกลาง",3,4,46295,46297],["Setting C1,C2,C3",3,4,46298,46301],["ประกอบหวีซอง",4,4,46302,46305],["ยกลูกป้อนบน",3,4,46307,46309],["Setting A1",2,4,46310,46311],["ลง UF",1,4,46312,46312],["Setting B1",1,4,46314,46314],["ยกลูก top",1,4,46314,46314],["ประกอบไฮดรอลิคกดหัวลูกหีบ",1,4,46315,46315],["ประกอบ Tailbar + box couping ลูก top",1,4,46316,46316],["ประกอบ Tailbar + box couping ป้อนล่าง 1",1,4,46317,46317],["เข้างานติดตั้งสายจาระบีลูกหีบ",2,4,46318,46319],["เข้างานติดตั้งสายน้ำ Cooling",2,4,46322,46323],["ประกอบถาดน้ำมันลูกหีบ",1,4,46324,46324],["ประกอบโซ่+Spocket+Cover",1,4,46325,46326],["ประกอบชู๊ท+ตั้งระยะเปิด",3,4,46328,46330]]},
     {id:"m3",name:"ลูกหีบ ชุดที่ 3",tasks:[["ประกอบเฟือง+แบริ่ง UF",2,3,46266,46267],["ยก F3 ลงแท่น",1,3,46268,46268],["ประกอบแท่นลูกป้อน",1,3,46269,46269],["ยกหวีซอง",4,3,46270,46274],["Seting ลูกป้อนเข้ากับหวีซอง",2,3,46275,46276],["ยกลูกป้อนบน",2,3,46277,46279],["Seting A1",2,3,46280,46281],["Seting B1",1,3,46282,46282],["ยก UF",1,3,46283,46283],["ยกลูก top",1,3,46284,46284],["ประกอบไฮดรอลิคกดหัวลูกหีบ",1,3,46286,46286],["ประกอบโซ่ขับลูกหีบ",1,3,46287,46287],["ประกอบโซ่ขับลูกป้อน",1,3,46288,46288],["ประกอบ Tailbar + box couping ลูก top",2,3,46289,46290],["เข้างานติดตั้งสายจาระบีลูกหีบ",2,3,46291,46293],["เข้างานติดตั้งสายน้ำ Cooling",1,3,46294,46294],["ประกอบถาดน้ำมันลูกหีบ",1,3,46295,46295],["ประกอบชู๊ท+ตั้งระยะเปิด",3,3,46296,46298]]},
-    {id:"m4",name:"ลูกหีบ ชุดที่ 4",tasks:[["ประกอบแท่นลูกป้อน",1,4,46264,46264,"",100],["ยกลูกป้อนล่าง",1,4,46265,46265,"",100],["ยกหวีซอง",4,4,46266,46269],["Seting ลูกป้อนเข้ากับหวีซอง",2,4,46270,46272],["ยกลูกป้อนบน",2,4,46273,46274],["Seting A1",2,4,46275,46276],["Seting B1",1,4,46277,46277],["ยก UF",1,4,46279,46279],["ยกลูก top",1,4,46280,46280],["ประกอบไฮดรอลิคกดหัวลูกหีบ",1,4,46281,46281],["ประกอบโซ่ขับลูกหีบ",1,4,46282,46282],["ประกอบโซ่ขับลูกป้อน",1,4,46283,46283],["ประกอบ Tailbar + box couping ลูก top",2,4,46284,46286],["เข้างานติดตั้งสายจาระบีลูกหีบ",2,4,46287,46288],["เข้างานติดตั้งสายน้ำ Cooling",1,4,46289,46289],["ประกอบถาดน้ำมันลูกหีบ",1,4,46290,46290],["ประกอบชู๊ท+ตั้งระยะเปิด",3,4,46291,46294]]},
+    {id:"m4",name:"ลูกหีบ ชุดที่ 4",tasks:[["ประกอบแท่นลูกป้อน",1,4,46266,46266,"",100],["ยกลูกป้อนล่าง",1,4,46266,46266,"",100],["ยกหวีซอง",4,4,46266,46269],["Seting ลูกป้อนเข้ากับหวีซอง",2,4,46270,46272],["ยกลูกป้อนบน",2,4,46273,46274],["Seting A1",2,4,46275,46276],["Seting B1",1,4,46277,46277],["ยก UF",1,4,46279,46279],["ยกลูก top",1,4,46280,46280],["ประกอบไฮดรอลิคกดหัวลูกหีบ",1,4,46281,46281],["ประกอบโซ่ขับลูกหีบ",1,4,46282,46282],["ประกอบโซ่ขับลูกป้อน",1,4,46283,46283],["ประกอบ Tailbar + box couping ลูก top",2,4,46284,46286],["เข้างานติดตั้งสายจาระบีลูกหีบ",2,4,46287,46288],["เข้างานติดตั้งสายน้ำ Cooling",1,4,46289,46289],["ประกอบถาดน้ำมันลูกหีบ",1,4,46290,46290],["ประกอบชู๊ท+ตั้งระยะเปิด",3,4,46291,46294]]},
     {id:"m5",name:"ลูกหีบ ชุดที่ 5",tasks:[["ประกอบคานหวีกลาง+แท่นหวี",3,4,46295,46297],["หวีกลาง+เชื่อม",7,4,46270,46276],["ประกอบหวีซอง",4,4,46298,46302],["ประกอบเฟือง+แบริ่ง ลูกหลัง",1,4,46303,46303],["ยกลูกหลังลงแท่น",1,4,46304,46304],["ยกลูกป้อนบนลงแท่น",1,4,46305,46305],["ประกอบหวีกลาง",3,4,46307,46309],["Set A2,A3",1,4,46310,46310],["Setting C1,C2,C3",1,4,46311,46311],["ยก UF",1,4,46312,46312],["Seting B1",1,4,46314,46314],["ยกลูก top",1,4,46315,46315],["ประกอบไฮดรอลิคกดหัวลูกหีบ",1,4,46316,46316],["ประกอบ Tailbar + box couping ลูก top",1,4,46317,46317],["ประกอบ Tailbar + box couping ป้อนล่าง",1,4,46318,46318],["เข้างานติดตั้งสายจาระบีลูกหีบ",2,4,46319,46322],["เข้างานติดตั้งสายน้ำ Cooling",2,4,46323,46324],["ประกอบถาดน้ำมันลูกหีบ",1,4,46325,46325],["ประกอบโซ่+Spocket+Cover",1,4,46326,46326],["ประกอบชู๊ท+ตั้งระยะเปิด",3,4,46328,46330]]},
     {id:"mr",name:"ตะแกรง Rotary Screen",tasks:[["ประกอบติดตั้งตะแกรง No.1",10,3,46300,46310],["ประกอบติดตั้งตะแกรง No.2",10,3,46311,46318]]}
   ]},
@@ -48,8 +48,28 @@ function normalizeData(d){try{if(!d||!d.groups)return d;
     });}));
     d.mig=2;
   }
+  if((d.mig||0)<3){ // ครั้งเดียว: สลับตำแหน่งหมุด สะพานแยกทราย ↔ สะพาน Side
+    if(d.pins&&d.pins.pside&&d.pins.psand){var _t=d.pins.pside;d.pins.pside=d.pins.psand;d.pins.psand=_t;}
+    d.mig=3;
+  }
+  if((d.mig||0)<4){ // ครั้งเดียว: สลับตำแหน่งหมุด สะพาน Main ↔ สะพานแยกทราย
+    if(d.pins&&d.pins.pmain&&d.pins.psand){var _u=d.pins.pmain;d.pins.pmain=d.pins.psand;d.pins.psand=_u;}
+    d.mig=4;
+  }
+  if((d.mig||0)<5){ // ครั้งเดียว: แก้วันที่งานลูกหีบ4 (ประกอบแท่น/ยกลูกป้อนล่าง) 30-31/08 → 01/09 (ให้ช่วงงานเริ่ม 01/09)
+    d.groups.forEach(g=>(g.machines||[]).forEach(m=>{ if(m.id==="m4")(m.tasks||[]).forEach(t=>{
+      if((t.name==="ประกอบแท่นลูกป้อน"||t.name==="ยกลูกป้อนล่าง")&&(t.start===46264||t.start===46265)){t.start=46266;t.finish=46266;}
+    });}));
+    d.mig=5;
+  }
 }catch(e){}return d;}
-let DATA=normalizeData(load());
+function mergeLogs(remoteLogs){if(!Array.isArray(remoteLogs)||!Array.isArray(DATA.logs))return 0;const have={};DATA.logs.forEach(function(L){have[L.id]=1;});var added=0;remoteLogs.forEach(function(L){if(L&&L.id&&!have[L.id]){DATA.logs.push(L);added++;}});return added;}
+/* ---- แหล่งความจริงของ % งาน = log ที่ "ตรวจแล้ว" ---- นำค่าที่อนุมัติแล้วไปเขียนลง task เสมอ (กัน % หายเวลา sync/merge) */
+function applyApprovedLogs(){if(!DATA||!Array.isArray(DATA.logs))return 0;const agg={};
+  DATA.logs.forEach(function(L){if(!L||L.status!=="approved"||!L.mid)return;const k=L.mid+"|"+L.ti;if(!agg[k])agg[k]={prog:0,ts:-1,labor:null,note:null};const a=agg[k];if((+L.prog||0)>a.prog)a.prog=+L.prog||0;if((L.ts||0)>a.ts){a.ts=L.ts||0;if(L.labor!=null&&L.labor!=="")a.labor=+L.labor;if(L.note!=null)a.note=L.note;}});
+  var changed=0;Object.keys(agg).forEach(function(k){const p=k.split("|"),m=machineById(p[0]),ti=+p[1];if(!m||!m.tasks||!m.tasks[ti])return;const t=m.tasks[ti],a=agg[k];const np=Math.max(+t.prog||0,a.prog);if(np!==(+t.prog||0)){t.prog=np;changed++;}if(a.labor!=null&&t.labor!==a.labor){t.labor=a.labor;changed++;}if(a.note!=null&&a.note!==""&&t.note!==a.note){t.note=a.note;changed++;}});
+  return changed;}
+let DATA=normalizeData(load());applyApprovedLogs();
 let saveTimer=null;
 function save(){DATA.updated=Date.now();try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}const st=$("saveTxt");if(st)st.textContent="บันทึกแล้ว "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});}
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,400);if(typeof schedulePush==="function")schedulePush();}
@@ -65,6 +85,12 @@ function taskWeight(t,total){return manhour(t)/total*100;}
 function taskWeightInJob(t,m){const raw=machineRawMH(m);return raw>0?manhour(t)/raw*100:0;}
 function machineMandays(m){return machineRawMH(m);}
 function machineActual(m){const total=totalMandays();let rw=0,ra=0;m.tasks.forEach(t=>{const mh=manhour(t);rw+=mh;ra+=mh*(t.prog||0)/100;});const localPct=rw>0?ra/rw*100:0;return {weight:isExcluded(m)?0:rw/total*100,actual:isExcluded(m)?0:ra/total*100,localPct,rawMH:rw};}
+/* man-hour ที่ใช้ไปจริง = ผลรวมของ log ที่อนุมัติแล้ว (คน × ชม.ทำงานของวันนั้น) */
+function serialOfDateStr(s){if(!s)return null;const p=String(s).split("/");if(p.length<3)return null;return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));}
+function consumedMH(mid,ti){let sum=0;(DATA.logs||[]).forEach(L=>{if(L.status==="approved"&&L.mid===mid&&L.ti===ti){const ser=serialOfDateStr(L.date);const h=ser==null?8:(hoursForDay(sd(ser))||8);sum+=(+L.labor||0)*h;}});return sum;}
+function machineConsumedMH(m){let s=0;m.tasks.forEach((t,i)=>{s+=consumedMH(m.id,i);});return s;}
+/* จำนวนวันที่ใช้ไป = จำนวนวัน (distinct) ที่บันทึกและอนุมัติแล้วของ task นั้น */
+function consumedDays(mid,ti){var s={};var c=0;(DATA.logs||[]).forEach(function(L){if(L.status==="approved"&&L.mid===mid&&L.ti===ti&&L.date&&!s[L.date]){s[L.date]=1;c++;}});return c;}
 function machinePlanPct(m){const raw=machineRawMH(m);if(raw<=0)return 0;let acc=0;m.tasks.forEach(t=>{const mh=manhour(t);const ws=workingSerials(t.start,t.finish);if(mh<=0||!ws.length)return;acc+=(mh/raw)*ws.filter(x=>x<=TODAY_SERIAL).length/ws.length;});return acc*100;}
 function machineStatus(m){const a=machineActual(m);if(a.localPct>=99.9)return"done";if(a.localPct>0)return"prog";return"todo";}
 const STCOL={done:"var(--green)",prog:"var(--amber)",todo:"var(--grey)"};
@@ -84,7 +110,7 @@ function wireCommon(){
   const bt=$("btnTheme");if(bt)bt.addEventListener("click",()=>{const r=document.documentElement;const cur=r.getAttribute("data-theme");const next=cur==="dark"?"light":(cur==="light"?"dark":(matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark"));r.setAttribute("data-theme",next);try{localStorage.setItem("mr_theme",next);}catch(e){}if(typeof onThemeChange==="function")onThemeChange();});
   const be=$("btnExport");if(be)be.addEventListener("click",()=>{const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download="milling_repair_"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(u);});
   const bi=$("btnImport");if(bi)bi.addEventListener("click",()=>$("fileIn").click());
-  const fi=$("fileIn");if(fi)fi.addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(p);save();render();alert("นำเข้าข้อมูลสำเร็จ");}else alert("ไฟล์ไม่ถูกต้อง");}catch(err){alert("อ่านไฟล์ไม่ได้");}};r.readAsText(f);e.target.value="";});
+  const fi=$("fileIn");if(fi)fi.addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(p);applyApprovedLogs();save();render();alert("นำเข้าข้อมูลสำเร็จ");}else alert("ไฟล์ไม่ถูกต้อง");}catch(err){alert("อ่านไฟล์ไม่ได้");}};r.readAsText(f);e.target.value="";});
 }
 
 /* ---- Google Sheet sync (Apps Script backend) — URL ฝังไว้ถาวร ผู้ใช้แก้ไม่ได้ ---- */
@@ -132,10 +158,11 @@ async function saveSnapshot(){
   }catch(e){if(btn)btn.textContent=old;notify("เชื่อมต่อไม่ได้","ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่","err");}
 }
 async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetch(syncGet("snap=1"));const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
-async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
+async function pullRemote(silent,force){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
   try{const res=await fetch(syncGet());const j=await res.json();
     if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;const localT=DATA.updated||0,remoteT=remote.updated||0;const localFresh=WAS_SEED;
-      if(remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(remote);save();render();}
+      if(force||remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(remote);applyApprovedLogs();save();render();}
+      else{const added=mergeLogs(remote.logs);const applied=applyApprovedLogs();if(added||applied){save();if(typeof render==="function")render();}} // local ใหม่กว่า แต่ merge log จากชีท + apply ค่าที่ตรวจแล้ว (กัน log/% หาย)
       lastSync=new Date();setSyncBtn("ok","ดึงข้อมูลจากชีทแล้ว "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));return true;}
     setSyncBtn("err","ชีทยังไม่มีข้อมูล");return false;
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้");return false;}
@@ -143,7 +170,7 @@ async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn
 function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
   const sDate=$("snapDate");if(sDate){const t=new Date();const q=n=>String(n).padStart(2,"0");const iso=t.getFullYear()+"-"+q(t.getMonth()+1)+"-"+q(t.getDate());sDate.value=iso;sDate.max=iso;sDate.min="2026-09-01";}
-  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); await pullRemote(); });  // คลิก = ดึงข้อมูลล่าสุดจากชีท (ไม่มี prompt แก้ URL)
+  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); const ok=await pullRemote(false,true); if(ok&&typeof notify==="function")notify("ซิงค์สำเร็จ","ดึงข้อมูลล่าสุดจากชีทมาแสดงแล้ว"); });  // คลิก = ดึงข้อมูลจากชีทมาทับเสมอ (force)
 }
 /* ---- cane-truck race: วิ่งตาม % งานซ่อมรวมทั้งแผนก เข้าเส้นชัยที่ 100% ---- */
 function renderRace(){const t=$("truck");if(!t)return;
@@ -152,17 +179,19 @@ function renderRace(){const t=$("truck");if(!t)return;
   t.style.left=cx;
   const pc=$("tkPct");if(pc)pc.style.left=cx;    /* ป้าย % เคลื่อนตามรถ */
   const fl=$("raceFill");if(fl)fl.style.width=(4+87*f).toFixed(2)+"%"; /* ไฟเรืองแสงบอกระยะที่วิ่งไปแล้ว */
-  const pct=$("tkPct");if(pct)pct.textContent=p.toFixed(1)+"%";
+  const target=Math.max(0,Math.min(100,planPctUpTo(TODAY_SERIAL))); // เป้าหมายภาพรวม ณ วันนี้
+  const onTrack=p>=target-0.05;                                     // ได้ตามเป้า/เกิน = เขียว · ต่ำกว่า = แดง
+  const pct=$("tkPct");if(pct){pct.textContent=p.toFixed(1)+"%";pct.classList.toggle("ok",onTrack);pct.classList.toggle("behind",!onTrack);}
   const done=p>=99.95;t.classList.toggle("done",done);
-  const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":"วิ่งไปแล้ว "+p.toFixed(0)+"% ของเส้นชัย";}
+  const h=$("raceHint");if(h)h.textContent=done?"เข้าเส้นชัยแล้ว!":(onTrack?"ตามเป้า ✓ (เป้า ณ วันนี้ "+target.toFixed(1)+"%)":"ต่ำกว่าเป้า (เป้า ณ วันนี้ "+target.toFixed(1)+"%)");}
 
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
 const DESIGN_W=1340, MAX_SCALE=1.7;
 function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;
-  let s=Math.min(MAX_SCALE, vw/DESIGN_W); // fit ตามความกว้าง เลื่อนแนวตั้งได้ (มี Log Book ด้านล่าง)
-  app.style.transform="scale("+s.toFixed(4)+")";
-  app.style.marginLeft=Math.max(0,(vw-DESIGN_W*s)/2)+"px";
-  const w=$("appWrap");if(w)w.style.height=app.getBoundingClientRect().height+"px";}
+  let s=Math.min(MAX_SCALE, vw/DESIGN_W); // fit ตามความกว้าง · ใช้ zoom (สเกล layout จริง) เลื่อนขึ้น-ลงได้ปกติ
+  app.style.transform="none";app.style.marginLeft="";
+  app.style.zoom=s.toFixed(4);
+  const w=$("appWrap");if(w)w.style.height="";}
 function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout(window._fit);window._fit=setTimeout(fitPage,60);});window.addEventListener("load",fitPage);
   try{new ResizeObserver(()=>fitPage()).observe($("app"));}catch(e){}}
 /* boot — call after the page defines render() */

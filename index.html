@@ -4,15 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ระบบติดตามงานซ่อมลูกหีบ</title>
+<link rel="icon" type="image/png" href="logo.png?v=35">
+<link rel="apple-touch-icon" href="logo.png?v=35">
 <!-- ออฟไลน์ 100% : ไม่พึ่ง CDN / ฟอนต์ภายนอก · ภาพฝังแบบ data URI -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=21">
+<link rel="stylesheet" href="shared.css?v=35">
 </head>
 <body class="bgphoto">
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <div class="logo">ML</div>
+      <img class="logo" src="logo.png?v=35" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
       <div><h1>ระบบติดตามงานซ่อมลูกหีบ</h1>
       <div class="sub">แผนงานซ่อมเครื่องจักร ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
@@ -64,7 +66,12 @@
   </div>
 
   <div class="card logbook">
-    <div class="hero-head"><div class="sec-ic"></div><h2>สมุดบันทึก (Log Book)</h2><span class="pill" id="logPend"></span></div>
+    <div class="hero-head"><div class="sec-ic"></div><h2>สมุดบันทึก (Log Book)</h2><span class="pill" id="logPend"></span>
+      <div class="logtools">
+        <select id="logFilter" class="logsel"><option value="all">ทั้งหมด</option><option value="pending">⏳ รอตรวจสอบ</option><option value="approved">✓ ตรวจแล้ว</option></select>
+        <input id="logSearch" class="logsearch" placeholder="🔍 ค้นหา เครื่อง / งาน / ผู้บันทึก">
+      </div>
+    </div>
     <div id="logList" class="loglist"></div>
   </div>
 
@@ -79,7 +86,7 @@
     <button class="xbtn" id="dClose" title="ปิด">✕</button>
   </div>
   <div class="dbody">
-    <div class="owner-row"><label>ผู้รับผิดชอบ</label><input id="dOwner" placeholder="ชื่อหน่วยงาน/ผู้รับผิดชอบ…"></div>
+    <div class="owner-row"><label>ชื่อผู้บันทึก <span style="color:var(--red)">*</span></label><input id="dOwner" placeholder="กรอกชื่อผู้บันทึก (จำเป็น)…" required></div>
     <div class="dmini" id="dMini"></div>
     <div class="tips">✏️ กรอกได้เฉพาะ <b>จำนวนคน</b> · <b>% ความคืบหน้า</b> · <b>หมายเหตุ</b> — ที่เหลือล็อกตามแผน</div>
     <div id="taskBody" class="tcards"></div>
@@ -120,7 +127,7 @@
   <div class="dfoot"><button class="tbtn" id="rvCancel">ยกเลิก</button><button class="tbtn pri big" id="rvApprove">✓ ตรวจแล้ว (อนุมัติ)</button></div>
 </aside>
 
-<script src="shared.js?v=21"></script>
-<script src="input.js?v=21"></script>
+<script src="shared.js?v=35"></script>
+<script src="input.js?v=35"></script>
 </body>
 </html>

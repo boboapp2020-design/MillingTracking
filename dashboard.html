@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard — งานซ่อมลูกหีบ</title>
+<link rel="icon" type="image/png" href="logo.png?v=35">
+<link rel="apple-touch-icon" href="logo.png?v=35">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=21">
+<link rel="stylesheet" href="shared.css?v=35">
 <style>
 .jtbl{width:100%;border-collapse:collapse;font-size:13px}
 .jtbl th{font-size:11px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 8px;border-bottom:2px solid var(--line)}
@@ -45,13 +47,25 @@
 .fc-stats span{font-size:11px;color:var(--ink2);font-weight:600}
 .fc-stats b{font-size:16px;font-family:"IBM Plex Mono",monospace;white-space:nowrap}
 .fc-stats b.g{color:var(--green)}.fc-stats b.a{color:var(--amber)}.fc-stats b.r{color:var(--red)}
+/* calendar click + day view */
+.cald{position:relative}
+.cald.clk{cursor:pointer;transition:.12s}
+.cald.clk:hover{outline:2px solid var(--brand);outline-offset:-2px}
+.cald.hasrec{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--green) 45%,transparent)}
+.cald .calrec{position:absolute;top:3px;right:4px;background:var(--green);color:#fff;font-size:9px;font-weight:700;border-radius:10px;min-width:15px;height:15px;line-height:15px;text-align:center;padding:0 3px}
+.dvrow{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.dvmain{flex:1;min-width:0}
+.dvtask{font-weight:600;color:var(--ink);font-size:14.5px}
+.dvmeta{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.dvpct{flex:0 0 50px;text-align:right;font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:700}
+#dvBody{padding:14px 20px 22px}
 </style>
 </head>
 <body class="bgphoto">
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <div class="logo">ML</div>
+      <img class="logo" src="logo.png?v=35" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
       <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
       <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
@@ -90,11 +104,10 @@
   </div>
 
   <div class="card" style="margin-top:18px;padding:18px">
-    <div class="sec-title"><div class="sec-ic">🧮</div><h2>น้ำหนักและความคืบหน้ารายงาน (10 Jobs)</h2><span class="pill">คลิกแถวเพื่อดูรายละเอียด Task</span></div>
+    <div class="sec-title"><div class="sec-ic">🧮</div><h2>รายงานความคืบหน้างานซ่อม (10 งาน)</h2><span class="pill">คลิกแถวเพื่อดูรายละเอียด Task</span></div>
     <div class="tblwrap" id="jobsTable"></div>
   </div>
 
-  <div class="cols" id="groups" style="margin-top:18px"></div>
 
   <div class="card cal" id="calCard" style="margin-top:18px;display:none">
     <div class="sec-title"><div class="sec-ic">📅</div><h2>ปฏิทินวันทำงาน / วันหยุด</h2><span class="pill">ก.ย.–พ.ย. 2026</span></div>
@@ -113,6 +126,12 @@
   </footer>
 </div></div>
 
+<div class="scrim" id="dvScrim"></div>
+<aside class="drawer modal" id="dvModal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="dhead"><div class="dt" id="dvTitle">—</div><button class="xbtn" id="dvClose" title="ปิด">✕</button></div>
+  <div class="dbody" id="dvBody"></div>
+</aside>
+
 <div class="scrim" id="dtScrim"></div>
 <aside class="drawer" id="detail" aria-hidden="true">
   <div class="dhead"><div><div class="dt" id="dtTitle">—</div><div class="ds" id="dtSub">—</div></div><button class="xbtn" id="dtClose">✕</button></div>
@@ -120,7 +139,7 @@
   <div class="dbody tblwrap" id="dtBody"></div>
 </aside>
 
-<script src="shared.js?v=21"></script>
-<script src="dashboard.js?v=21"></script>
+<script src="shared.js?v=35"></script>
+<script src="dashboard.js?v=35"></script>
 </body>
 </html>

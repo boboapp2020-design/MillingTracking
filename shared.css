@@ -40,8 +40,7 @@ button{font-family:inherit;cursor:pointer}
 header.top{position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line2)}
 .top-in{max-width:none;margin:0;padding:11px 26px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px;margin-right:auto}
-.logo{width:40px;height:40px;border-radius:9px;background:var(--brand);display:grid;place-items:center;color:#fff;
-  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px;letter-spacing:.5px;flex:0 0 auto}
+.logo{width:44px;height:44px;border-radius:10px;flex:0 0 auto;object-fit:contain;display:block;filter:drop-shadow(0 2px 4px rgba(10,20,35,.25))}
 .brand h1{font-size:16px;line-height:1.15}
 .brand .sub{font-size:11.5px;color:var(--ink2);margin-top:2px;font-weight:400}
 .tbtn{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px 13px;
@@ -207,6 +206,7 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .owner-row label{font-size:15px;color:var(--ink2);font-weight:700;white-space:nowrap}
 .owner-row input{flex:1;border:1.5px solid var(--line2);background:#fff;color:var(--ink);border-radius:12px;padding:13px 14px;font-family:inherit;font-size:17px}
 .owner-row input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
+.owner-row input.req-err{border-color:var(--red);background:color-mix(in srgb,var(--red) 6%,#fff);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 20%,transparent)}
 .dmini{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
 .dmini .m{flex:1;min-width:120px;background:linear-gradient(180deg,#f3f7fb,#eaf0f6);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
 .dmini .m .l{font-size:13px;color:var(--ink2);font-weight:600} .dmini .m .v{font-size:25px;font-weight:800;margin-top:4px;font-family:"IBM Plex Mono",monospace}
@@ -224,6 +224,7 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .tc-badge.s-prog{background:color-mix(in srgb,var(--amber) 20%,#fff);color:#9a6a00}
 .tc-badge.s-done{background:color-mix(in srgb,var(--green) 22%,#fff);color:#137a48}
 .tc-meta{font-size:13px;color:var(--ink2);margin-bottom:13px}
+.tc-dates{font-size:12px;color:var(--ink2);margin:-2px 0 12px;font-family:"IBM Plex Mono",monospace}
 .tc-meta .tcw{color:var(--ink);font-family:"IBM Plex Mono",monospace}
 .tc-grid{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
 .tc-fld{display:flex;flex-direction:column;gap:7px}.tc-fld.grow{flex:1;min-width:210px}
@@ -276,11 +277,17 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .floorhint{font-size:11.5px;font-weight:600;color:var(--red);margin-left:6px}
 /* ===== Log Book ===== */
 .logbook{margin-top:18px}
-.loglist{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.logbook .hero-head{flex-wrap:wrap;gap:10px}
+.logtools{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.logsel,.logsearch{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color-scheme:light}
+.logsel:focus,.logsearch:focus{outline:none;border-color:var(--brand)}
+.logsearch{min-width:190px}
+.loglist{display:flex;flex-direction:column;gap:2px;margin-top:6px;max-height:702px;overflow-y:auto}
+/* ~15 แถว (แถวละ ~46px) ที่เหลือเลื่อน */
 .logempty{color:var(--ink2);font-size:14px;padding:18px 6px;text-align:center}
 .logrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;border:1px solid transparent;font-size:14px}
 .logrow:nth-child(even){background:var(--panel2)}
-.logrow.lhead{font-size:12px;color:var(--ink2);font-weight:700;background:transparent;border-bottom:2px solid var(--line2);border-radius:0;padding-bottom:8px}
+.logrow.lhead{font-size:12px;color:var(--ink2);font-weight:700;background:var(--panel);border-bottom:2px solid var(--line2);border-radius:0;padding-bottom:8px;position:sticky;top:0;z-index:2}
 .logrow.pend{background:color-mix(in srgb,var(--amber) 10%,var(--panel));border-color:color-mix(in srgb,var(--amber) 32%,transparent)}
 .lg-date{flex:0 0 96px;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink2)}
 .lg-main{flex:1;min-width:0}
@@ -348,10 +355,14 @@ footer{max-width:1340px;margin:0 auto;padding:14px 20px 34px;color:var(--ink3);f
 .race2 .rflag{position:absolute;right:12px;top:6px;z-index:5;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
 .truck2{position:absolute;left:5%;bottom:50px;width:7%;min-width:66px;max-width:118px;z-index:4;transform:translateX(-50%);transform-origin:bottom center;transition:left 1.2s cubic-bezier(.22,.61,.36,1);pointer-events:none}
 .truck2 .truckimg{display:block;width:100%;height:auto;filter:drop-shadow(0 5px 5px rgba(10,16,24,.5));-webkit-user-drag:none}
-.race2 .tkpct{position:absolute;left:6%;bottom:6px;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:700;color:#fff;background:linear-gradient(180deg,#f2564a,#d3342a);border:1px solid #b52a20;border-radius:11px;padding:3px 16px;letter-spacing:.5px;white-space:nowrap;box-shadow:0 5px 12px rgba(190,40,32,.4),inset 0 1px 0 rgba(255,255,255,.25);transition:left 1.2s cubic-bezier(.22,.61,.36,1)}
+.race2 .tkpct{position:absolute;left:6%;bottom:6px;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:700;color:#fff;background:linear-gradient(180deg,#f2564a,#d3342a);border:1px solid #b52a20;border-radius:11px;padding:3px 16px;letter-spacing:.5px;white-space:nowrap;box-shadow:0 5px 12px rgba(190,40,32,.4),inset 0 1px 0 rgba(255,255,255,.25);transition:left 1.2s cubic-bezier(.22,.61,.36,1),background .4s,border-color .4s,box-shadow .4s}
+/* ได้ตามเป้า/เกิน → เขียว */
+.race2 .tkpct.ok{background:linear-gradient(180deg,#34c759,#1ea94b);border-color:#158f3d;box-shadow:0 5px 12px rgba(30,169,75,.42),inset 0 1px 0 rgba(255,255,255,.28)}
+/* ต่ำกว่าเป้า → แดง (ค่าเริ่มต้น ระบุชัดเพื่อความแน่นอน) */
+.race2 .tkpct.behind{background:linear-gradient(180deg,#f2564a,#d3342a);border-color:#b52a20;box-shadow:0 5px 12px rgba(190,40,32,.4),inset 0 1px 0 rgba(255,255,255,.25)}
 .truck2.done .truckimg{animation:bump .7s ease 2}
 @keyframes bump{0%,100%{transform:translateY(0)}45%{transform:translateY(-6px)}}
 
 /* ===== Lock ratio: เลย์เอาต์เดสก์ท็อปคงสัดส่วน ย่อทั้งหน้าให้พอดีจอทุกอุปกรณ์ ===== */
-#appWrap{overflow:hidden;width:100%}
-#app{width:1340px;margin:0;transform-origin:top left}
+#appWrap{overflow-x:hidden;width:100%}
+#app{width:1340px;margin:0 auto;transform-origin:top left}
