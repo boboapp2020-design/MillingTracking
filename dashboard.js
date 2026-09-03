@@ -60,11 +60,11 @@ function renderAlerts(){const rows=[];jobs().forEach(m=>{const a=machineActual(m
   $("alerts").innerHTML=html;$("alerts").querySelectorAll(".alert[data-mid]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.mid)));}
 
 function actualAtSerial(ser){const s0=projectRange().min;const actNow=actualPct();
-  const pts=(SNAPS||[]).filter(s=>s.serial!=null&&s.overall!=null).map(s=>[s.serial,s.overall]).sort((a,b)=>a[0]-b[0]);
-  if(pts.length){if(ser<=s0)return 0;if(ser<=pts[0][0])return pts[0][1]*(ser-s0)/Math.max(1,pts[0][0]-s0);
-    for(let i=1;i<pts.length;i++){if(ser<=pts[i][0]){const a=pts[i-1],b=pts[i];return a[1]+(b[1]-a[1])*(ser-a[0])/Math.max(1,b[0]-a[0]);}}
-    return pts[pts.length-1][1];}
-  if(ser<=s0)return 0;if(ser>=TODAY_SERIAL)return actNow;return actNow*(ser-s0)/Math.max(1,TODAY_SERIAL-s0);}
+  const pts=(SNAPS||[]).filter(s=>s.serial!=null&&s.overall!=null&&s.serial<TODAY_SERIAL).map(s=>[s.serial,s.overall]).sort((a,b)=>a[0]-b[0]);
+  pts.push([TODAY_SERIAL,actNow]); // ยึดค่าจริงสด ณ วันนี้เป็นจุดปลาย
+  if(ser<=s0)return 0;if(ser<=pts[0][0])return pts[0][1]*(ser-s0)/Math.max(1,pts[0][0]-s0);
+  for(let i=1;i<pts.length;i++){if(ser<=pts[i][0]){const a=pts[i-1],b=pts[i];return a[1]+(b[1]-a[1])*(ser-a[0])/Math.max(1,b[0]-a[0]);}}
+  return pts[pts.length-1][1];}
 function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.devicePixelRatio||1;const W=cv.clientWidth||900,H=270;cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
   const rng=projectRange();const s0=rng.min,s1=rng.max;const span=Math.max(1,s1-s0);const padL=38,padR=14,padT=14,padB=26;const pw=W-padL-padR,ph=H-padT-padB;
@@ -78,10 +78,10 @@ function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.d
   const actNow=actualPct();
   // actual line from snapshots if available, else single ramp to today
   c.lineWidth=2.8;c.strokeStyle=cGreen;c.beginPath();
-  const pts=[];if(SNAPS&&SNAPS.length){SNAPS.forEach(sp=>{if(sp.serial!=null&&sp.overall!=null)pts.push([sp.serial,sp.overall]);});pts.sort((a,b)=>a[0]-b[0]);}
-  if(pts.length){c.moveTo(X(s0),Y(0));pts.forEach(p=>c.lineTo(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1])));c.stroke();
-    c.fillStyle=cGreen;pts.forEach(p=>{c.beginPath();c.arc(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1]),3.5,0,7);c.fill();});}
-  else{c.moveTo(X(s0),Y(0));c.lineTo(X(Math.min(TODAY_SERIAL,s1)),Y(actNow));c.stroke();c.fillStyle=cGreen;c.beginPath();c.arc(X(Math.min(TODAY_SERIAL,s1)),Y(actNow),4.5,0,7);c.fill();}
+  const pts=[];if(SNAPS&&SNAPS.length){SNAPS.forEach(sp=>{if(sp.serial!=null&&sp.overall!=null&&sp.serial<TODAY_SERIAL)pts.push([sp.serial,sp.overall]);});pts.sort((a,b)=>a[0]-b[0]);}
+  pts.push([Math.min(TODAY_SERIAL,s1),actNow]); // ปลายเส้นจบที่ค่าจริงสด ณ วันนี้เสมอ (ไม่ค้างที่ snapshot เก่า)
+  c.moveTo(X(s0),Y(0));pts.forEach(p=>c.lineTo(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1])));c.stroke();
+  c.fillStyle=cGreen;pts.forEach((p,i)=>{c.beginPath();c.arc(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1]),i===pts.length-1?4.5:3.5,0,7);c.fill();});
   if(TODAY_SERIAL>=s0&&TODAY_SERIAL<=s1){const x=X(TODAY_SERIAL);c.setLineDash([4,4]);c.strokeStyle=cInk2;c.lineWidth=1.4;c.beginPath();c.moveTo(x,padT);c.lineTo(x,padT+ph);c.stroke();c.setLineDash([]);}
   if(hoverX!=null&&hoverX>=padL&&hoverX<=W-padR){const sr=Math.max(s0,Math.min(s1,Math.round(s0+(hoverX-padL)/pw*span)));const x=X(sr);
     const planV=planPctUpTo(sr),actV=actualAtSerial(sr);
@@ -92,7 +92,8 @@ function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.d
     const bw=tw+18,bh=lines.length*16+10;let bx=x+12;if(bx+bw>W-padR)bx=x-bw-12;const by=padT+4;
     c.fillStyle="rgba(18,26,38,.94)";roundRect(c,bx,by,bw,bh,7);c.fill();
     c.textAlign="left";c.fillStyle="#fff";c.fillText(lines[0],bx+9,by+17);c.fillStyle=cBrand;c.fillText(lines[1],bx+9,by+33);c.fillStyle=cGreen;c.fillText(lines[2],bx+9,by+49);c.textAlign="start";}
-  const ch=$("curveHint");if(ch)ch.textContent="แผน "+planPctUpTo(TODAY_SERIAL).toFixed(1)+"% · จริง "+actNow.toFixed(1)+"%"+(pts.length?` · ${pts.length} snapshot`:"");}
+  const nsnap=(SNAPS||[]).filter(s=>s.serial!=null&&s.overall!=null).length;
+  const ch=$("curveHint");if(ch)ch.textContent="แผน "+planPctUpTo(TODAY_SERIAL).toFixed(1)+"% · จริง "+actNow.toFixed(1)+"%"+(nsnap?` · ${nsnap} snapshot`:"");}
 
 /* ---- drill-down detail (read-only) ---- */
 function openDetail(mid){const m=machineById(mid);if(!m)return;const g=groupOf(m);const a=machineActual(m);const total=totalMandays();

@@ -30,22 +30,16 @@ $("resetPins").addEventListener("click",e=>{e.preventDefault();if(!confirm("ร�
 let curMid=null;
 function openDrawer(mid){if(editPins)return;curMid=mid;const m=machineById(mid);if(!m)return;const g=groupOf(m);
   $("dTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');$("dSub").textContent=g.name+" · "+m.tasks.length+" งาน";
-  const ow=$("dOwner");ow.value=m.owner||"";ow.classList.remove("req-err");ow.oninput=()=>{m.owner=ow.value;ow.classList.remove("req-err");scheduleSave();};
+  const ow=$("dOwner");ow.value=m.owner||"";ow.oninput=()=>{m.owner=ow.value;scheduleSave();};
   renderTasks();$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
 function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;renderDiagram();}
 function dmy(serial){const s=isoOf(serial);if(!s)return "—";const p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
 function wtCell(t,m,total){if(manhour(t)===0)return '<span style="color:var(--amber)">—</span><br><span style="opacity:.55;font-size:10px">ยังไม่ระบุ</span>';
   return `<b>${taskWeightInJob(t,m).toFixed(1)}%</b><br><span style="opacity:.6;font-size:10px">รวม ${taskWeight(t,total).toFixed(2)}% · ${manhour(t)}h</span>`;}
-function miniHTML(m){const a=machineActual(m);const plan=(typeof machinePlanPct==="function")?machinePlanPct(m):0;
-  return `<div class="m"><div class="l">ความคืบหน้าเครื่องนี้</div><div class="v" style="color:${STCOL[machineStatus(m)]}">${a.localPct.toFixed(1)}%</div></div><div class="m"><div class="l">เป้าหมาย ณ วันนี้</div><div class="v" style="color:var(--brand2)">${plan.toFixed(1)}%</div></div>`;}
-function miniHTML_old(m){const a=machineActual(m),mh=machineMandays(m);
+function miniHTML(m){const a=machineActual(m),mh=machineMandays(m);
   return `<div class="m"><div class="l">ความคืบหน้าเครื่องนี้</div><div class="v" style="color:${STCOL[machineStatus(m)]}">${a.localPct.toFixed(1)}%</div></div><div class="m"><div class="l">น้ำหนัก (ทั้งโปรเจกต์)</div><div class="v">${isExcluded(m)?'แยก':a.weight.toFixed(2)+'%'}</div></div><div class="m"><div class="l">งานรวม</div><div class="v">${mh.toFixed(0)} <span style="font-size:11px;color:var(--ink2)">man-hr</span></div></div>`;}
 const STLABEL={done:"เสร็จแล้ว",prog:"กำลังทำ",todo:"ยังไม่เริ่ม"};
 function pendingFor(mid,ti){return (DATA.logs||[]).find(L=>L.mid===mid&&L.ti===ti&&L.status==='pending');}
-function daysLine(t,i){const tgt=t.days;const used=consumedDays(curMid,i);
-  if(tgt==null)return `<div class="tc-dates">🗓️ ไม่ได้ระบุจำนวนวัน</div>`;
-  const rem=tgt-used;const col=rem<0?"var(--red)":(rem===0?"var(--amber)":"var(--brand2)");
-  return `<div class="tc-dates">🗓️ ต้องใช้ <b>${tgt}</b> วัน · เหลือ <b style="color:${col}">${rem}</b> วัน${used>0?` <span style="opacity:.6">(ใช้ไป ${used})</span>`:''}</div>`;}
 function snapDateStr(){const s=$("snapDate");if(s&&s.value){const q=s.value.split("-");return q[2]+"/"+q[1]+"/"+q[0];}const t=new Date();const P=n=>String(n).padStart(2,"0");return P(t.getDate())+"/"+P(t.getMonth()+1)+"/"+t.getFullYear();}
 function renderTasks(){const m=machineById(curMid);
   $("dMini").innerHTML=miniHTML(m);
@@ -53,18 +47,16 @@ function renderTasks(){const m=machineById(curMid);
     if(ast==="done"){ // อนุมัติแล้วครบ 100% → ดูอย่างเดียว
       return `<div class="tcard done locked" data-i="${i}">
         <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-done">✓ เสร็จแล้ว · 100%</span></div>
-        ${daysLine(t,i)}
         <div class="tc-ro"><span>👥 จำนวนคน: <b>${t.labor??"—"}</b></span><span>📝 หมายเหตุ: ${t.note?escapeHtml(t.note):"—"}</span><span class="ro-tag">🔒 ดูอย่างเดียว</span></div>
       </div>`;}
     const pend=pendingFor(curMid,i);const dp=pend?(+pend.prog||0):ap;const dl=pend?pend.labor:t.labor;const dn=pend?pend.note:t.note;const dst=dp>=100?"done":(dp>0?"prog":"todo");
     return `<div class="tcard ${dst}" data-i="${i}">
       <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-${dst}">${STLABEL[dst]} · ${dp}%</span>${pend?'<span class="pendtag">⏳ รอตรวจสอบ</span>':''}</div>
-      ${daysLine(t,i)}
       <div class="tc-grid">
         <div class="tc-fld"><label>จำนวนคน</label>
           <div class="stepper"><button type="button" class="stp" data-stp="-1" aria-label="ลด">−</button><input class="num edit" type="number" min="0" step="1" value="${dl??""}" data-f="labor" inputmode="numeric"><button type="button" class="stp" data-stp="1" aria-label="เพิ่ม">＋</button></div>
         </div>
-        <div class="tc-fld grow"><label>ความคืบหน้า <b class="pv" style="color:${STCOL[dst]}">${Math.max(dp,ap)}%</b>${ap>0?`<span class="floorhint" title="ตรวจแล้ว ${ap}% · ลดต่ำกว่านี้ไม่ได้">🔒</span>`:''}</label>
+        <div class="tc-fld grow"><label>ความคืบหน้า <b class="pv" style="color:${STCOL[dst]}">${Math.max(dp,ap)}%</b>${ap>0?`<span class="floorhint">🔒 ตรวจแล้ว ${ap}% · ลดต่ำกว่านี้ไม่ได้</span>`:''}</label>
           <div class="prgrow"><button type="button" class="stpbtn pstp" data-pstp="-1" aria-label="ลด 1%">−</button><input class="prg edit" type="range" min="${ap}" max="100" step="1" value="${Math.max(dp,ap)}"><button type="button" class="stpbtn pstp" data-pstp="1" aria-label="เพิ่ม 1%">＋</button></div>
         </div>
       </div>
@@ -78,18 +70,15 @@ function renderTasks(){const m=machineById(curMid);
     card.querySelectorAll('.pstp').forEach(b=>b.addEventListener('click',()=>setP((+rg.value||0)+(+b.dataset.pstp))));
     card.querySelectorAll('[data-stp]').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;}));
   });}
-function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}
-  const who=(m.owner||"").trim(); // บังคับลงชื่อผู้บันทึก
-  if(!who){const ow=$("dOwner");if(ow){ow.classList.add("req-err");ow.focus();ow.scrollIntoView({block:"center"});}notify("ต้องลงชื่อผู้บันทึก","กรุณากรอก “ชื่อผู้บันทึก” ก่อนกดบันทึกทุกครั้ง","err");return;}
-  let n=0;
+function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}let n=0;
   $("taskBody").querySelectorAll(".tcard:not(.locked)").forEach(card=>{const i=+card.dataset.i;const t=m.tasks[i];
     const prog=Math.max(+t.prog||0,Math.max(0,Math.min(100,Math.round(+card.querySelector('.prg').value||0)))); // ไม่ต่ำกว่าที่ตรวจแล้ว
     const lv=card.querySelector('input[data-f=labor]').value;const labor=lv===""?null:Math.max(0,+lv);
     const note=card.querySelector('input[data-f=note]').value;
     const changed=prog!==(+t.prog||0)||labor!==(t.labor??null)||(note||"")!==(t.note||"");
     let pend=pendingFor(curMid,i);
-    if(changed){if(pend){pend.prog=prog;pend.labor=labor;pend.note=note;pend.by=who;pend.date=snapDateStr();pend.ts=Date.now();}
-      else{DATA.logs.push({id:"L"+Date.now()+"_"+i,mid:curMid,ti:i,taskName:t.name,machineName:m.name,by:who,prog,labor,note,date:snapDateStr(),ts:Date.now(),status:"pending"});}n++;}
+    if(changed){if(pend){pend.prog=prog;pend.labor=labor;pend.note=note;pend.by=m.owner||"ไม่ระบุ";pend.date=snapDateStr();pend.ts=Date.now();}
+      else{DATA.logs.push({id:"L"+Date.now()+"_"+i,mid:curMid,ti:i,taskName:t.name,machineName:m.name,by:m.owner||"ไม่ระบุ",prog,labor,note,date:snapDateStr(),ts:Date.now(),status:"pending"});}n++;}
     else if(pend){DATA.logs=DATA.logs.filter(L=>L!==pend);} // กลับเท่าเดิม → ถอนรายการ
   });
   scheduleSave();renderLog();closeDrawer();
@@ -104,12 +93,9 @@ $("dReset").addEventListener("click",closeDrawer); // ปุ่มยกเล�
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("drawer").classList.contains("on"))closeDrawer();});
 
 /* ===== Log Book ===== */
-function renderLog(){const el=$("logList");if(!el)return;let logs=(DATA.logs||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+function renderLog(){const el=$("logList");if(!el)return;const logs=(DATA.logs||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
   const pc=logs.filter(L=>L.status==='pending').length;const pcEl=$("logPend");if(pcEl)pcEl.textContent=pc?("· รอตรวจสอบ "+pc+" รายการ"):"";
-  const fv=($("logFilter")||{}).value||"all";const q=(($("logSearch")||{}).value||"").trim().toLowerCase();
-  if(fv!=="all")logs=logs.filter(L=>L.status===fv);
-  if(q)logs=logs.filter(L=>((L.machineName||"")+" "+(L.taskName||"")+" "+(L.by||"")).toLowerCase().includes(q));
-  if(!logs.length){el.innerHTML='<div class="logempty">'+(DATA.logs&&DATA.logs.length?'ไม่พบรายการที่ค้นหา':'ยังไม่มีรายการบันทึก — กรอกความคืบหน้าที่เครื่องจักรแล้วกด “บันทึก”')+'</div>';return;}
+  if(!logs.length){el.innerHTML='<div class="logempty">ยังไม่มีรายการบันทึก — กรอกความคืบหน้าที่เครื่องจักรแล้วกด “บันทึก”</div>';return;}
   el.innerHTML=`<div class="logrow lhead"><div class="lg-date">วันที่</div><div class="lg-main">เครื่องจักร / งาน · ผู้บันทึก</div><div class="lg-num">คน</div><div class="lg-num">%</div><div class="lg-st">สถานะ</div></div>`+
     logs.map(L=>{const pend=L.status==='pending';const dt=fmtTaskDate(L);
     return `<div class="logrow ${pend?'pend':'appr'}" data-id="${L.id}">
@@ -152,7 +138,6 @@ function wireReview(){
   bind("rvPminus",()=>{rp.value=Math.max(0,(+rp.value||0)-1);rp.dispatchEvent(new Event('input'));});
   bind("rvPplus",()=>{rp.value=Math.min(100,(+rp.value||0)+1);rp.dispatchEvent(new Event('input'));});
   const rl=$("rvLabor");bind("rvLminus",()=>{rl.value=Math.max(0,(+rl.value||0)-1);});bind("rvLplus",()=>{rl.value=(+rl.value||0)+1;});
-  const lf=$("logFilter");if(lf)lf.addEventListener("change",renderLog);const lsr=$("logSearch");if(lsr)lsr.addEventListener("input",renderLog);
 }
 wireReview();
 
