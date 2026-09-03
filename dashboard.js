@@ -4,8 +4,10 @@ let SNAPS=null;
 
 function fmtG(s){if(s==null)return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();}
 
-function renderPeriodBar(){const rng=projectRange();const asof=new Date().toLocaleString("th-TH",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
-  $("periodBar").innerHTML=`<span class="chip">ช่วงแผนงาน <b>${fmtTH(46276)} – ${fmtTH(46321)}</b></span><span class="chip">ขอบเขตงานจริง <b>${fmtTH(rng.min)} – ${fmtTH(rng.max)}</b></span><span class="chip">ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก man-hour (คน×ชม.จริง 8/9) · 10 Jobs = 100%</span>`;}
+function renderPeriodBar(){const asof=new Date().toLocaleString("th-TH",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  let mn=null,mx=null;DATA.groups.forEach(g=>g.machines.forEach(m=>{if(isExcluded(m))return;m.tasks.forEach(t=>{if(t.start!=null)mn=mn==null?t.start:Math.min(mn,t.start);if(t.finish!=null)mx=mx==null?t.finish:Math.max(mx,t.finish);});})); // ไม่รวม drump+ตะกาว
+  if(mn==null)mn=46266;if(mx==null)mx=46330;
+  $("periodBar").innerHTML=`<span class="chip">ช่วงแผนงาน <b>${fmtTH(mn)} – ${fmtTH(mx)}</b></span><span class="chip">ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก man-hour (คน×ชม.จริง 8/9) · 10 Jobs = 100%</span>`;}
 
 function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=act-plan;const rng=projectRange();const spi=plan>0?act/plan:1;
   // ค่าวันนี้ = เทียบกับ snapshot ล่าสุดก่อนวันนี้ (ถ้ามี) มิฉะนั้นเทียบจากต้นโครงการ
