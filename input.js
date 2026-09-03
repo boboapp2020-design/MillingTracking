@@ -64,7 +64,7 @@ function renderTasks(){const m=machineById(curMid);
         <div class="tc-fld"><label>จำนวนคน</label>
           <div class="stepper"><button type="button" class="stp" data-stp="-1" aria-label="ลด">−</button><input class="num edit" type="number" min="0" step="1" value="${dl??""}" data-f="labor" inputmode="numeric"><button type="button" class="stp" data-stp="1" aria-label="เพิ่ม">＋</button></div>
         </div>
-        <div class="tc-fld grow"><label>ความคืบหน้า <b class="pv" style="color:${STCOL[dst]}">${Math.max(dp,ap)}%</b>${ap>0?`<span class="floorhint">🔒 ตรวจแล้ว ${ap}% · ลดต่ำกว่านี้ไม่ได้</span>`:''}</label>
+        <div class="tc-fld grow"><label>ความคืบหน้า <b class="pv" style="color:${STCOL[dst]}">${Math.max(dp,ap)}%</b>${ap>0?`<span class="floorhint" title="ตรวจแล้ว ${ap}% · ลดต่ำกว่านี้ไม่ได้">🔒</span>`:''}</label>
           <div class="prgrow"><button type="button" class="stpbtn pstp" data-pstp="-1" aria-label="ลด 1%">−</button><input class="prg edit" type="range" min="${ap}" max="100" step="1" value="${Math.max(dp,ap)}"><button type="button" class="stpbtn pstp" data-pstp="1" aria-label="เพิ่ม 1%">＋</button></div>
         </div>
       </div>
