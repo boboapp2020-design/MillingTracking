@@ -223,6 +223,7 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .tc-badge.s-prog{background:color-mix(in srgb,var(--amber) 20%,#fff);color:#9a6a00}
 .tc-badge.s-done{background:color-mix(in srgb,var(--green) 22%,#fff);color:#137a48}
 .tc-meta{font-size:13px;color:var(--ink2);margin-bottom:13px}
+.tc-dates{font-size:12px;color:var(--ink2);margin:-2px 0 12px;font-family:"IBM Plex Mono",monospace}
 .tc-meta .tcw{color:var(--ink);font-family:"IBM Plex Mono",monospace}
 .tc-grid{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
 .tc-fld{display:flex;flex-direction:column;gap:7px}.tc-fld.grow{flex:1;min-width:210px}

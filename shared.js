@@ -48,6 +48,10 @@ function normalizeData(d){try{if(!d||!d.groups)return d;
     });}));
     d.mig=2;
   }
+  if((d.mig||0)<3){ // ครั้งเดียว: สลับตำแหน่งหมุด สะพานแยกทราย ↔ สะพาน Side
+    if(d.pins&&d.pins.pside&&d.pins.psand){var _t=d.pins.pside;d.pins.pside=d.pins.psand;d.pins.psand=_t;}
+    d.mig=3;
+  }
 }catch(e){}return d;}
 let DATA=normalizeData(load());
 let saveTimer=null;
