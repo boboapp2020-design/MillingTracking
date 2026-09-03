@@ -173,10 +173,10 @@ function renderRace(){const t=$("truck");if(!t)return;
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
 const DESIGN_W=1340, MAX_SCALE=1.7;
 function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;
-  let s=Math.min(MAX_SCALE, vw/DESIGN_W); // fit ตามความกว้าง เลื่อนแนวตั้งได้ (มี Log Book ด้านล่าง)
-  app.style.transform="scale("+s.toFixed(4)+")";
-  app.style.marginLeft=Math.max(0,(vw-DESIGN_W*s)/2)+"px";
-  const w=$("appWrap");if(w)w.style.height=app.getBoundingClientRect().height+"px";}
+  let s=Math.min(MAX_SCALE, vw/DESIGN_W); // fit ตามความกว้าง · ใช้ zoom (สเกล layout จริง) เลื่อนขึ้น-ลงได้ปกติ
+  app.style.transform="none";app.style.marginLeft="";
+  app.style.zoom=s.toFixed(4);
+  const w=$("appWrap");if(w)w.style.height="";}
 function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout(window._fit);window._fit=setTimeout(fitPage,60);});window.addEventListener("load",fitPage);
   try{new ResizeObserver(()=>fitPage()).observe($("app"));}catch(e){}}
 /* boot — call after the page defines render() */

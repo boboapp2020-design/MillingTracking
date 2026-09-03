@@ -359,5 +359,5 @@ footer{max-width:1340px;margin:0 auto;padding:14px 20px 34px;color:var(--ink3);f
 @keyframes bump{0%,100%{transform:translateY(0)}45%{transform:translateY(-6px)}}
 
 /* ===== Lock ratio: เลย์เอาต์เดสก์ท็อปคงสัดส่วน ย่อทั้งหน้าให้พอดีจอทุกอุปกรณ์ ===== */
-#appWrap{overflow:hidden;width:100%}
-#app{width:1340px;margin:0;transform-origin:top left}
+#appWrap{overflow-x:hidden;width:100%}
+#app{width:1340px;margin:0 auto;transform-origin:top left}
