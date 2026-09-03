@@ -42,6 +42,10 @@ function miniHTML_old(m){const a=machineActual(m),mh=machineMandays(m);
   return `<div class="m"><div class="l">ความคืบหน้าเครื่องนี้</div><div class="v" style="color:${STCOL[machineStatus(m)]}">${a.localPct.toFixed(1)}%</div></div><div class="m"><div class="l">น้ำหนัก (ทั้งโปรเจกต์)</div><div class="v">${isExcluded(m)?'แยก':a.weight.toFixed(2)+'%'}</div></div><div class="m"><div class="l">งานรวม</div><div class="v">${mh.toFixed(0)} <span style="font-size:11px;color:var(--ink2)">man-hr</span></div></div>`;}
 const STLABEL={done:"เสร็จแล้ว",prog:"กำลังทำ",todo:"ยังไม่เริ่ม"};
 function pendingFor(mid,ti){return (DATA.logs||[]).find(L=>L.mid===mid&&L.ti===ti&&L.status==='pending');}
+function daysLine(t,i){const tgt=t.days;const used=consumedDays(curMid,i);
+  if(tgt==null)return `<div class="tc-dates">🗓️ ไม่ได้ระบุจำนวนวัน</div>`;
+  const rem=tgt-used;const col=rem<0?"var(--red)":(rem===0?"var(--amber)":"var(--brand2)");
+  return `<div class="tc-dates">🗓️ ต้องใช้ <b>${tgt}</b> วัน · เหลือ <b style="color:${col}">${rem}</b> วัน${used>0?` <span style="opacity:.6">(ใช้ไป ${used})</span>`:''}</div>`;}
 function snapDateStr(){const s=$("snapDate");if(s&&s.value){const q=s.value.split("-");return q[2]+"/"+q[1]+"/"+q[0];}const t=new Date();const P=n=>String(n).padStart(2,"0");return P(t.getDate())+"/"+P(t.getMonth()+1)+"/"+t.getFullYear();}
 function renderTasks(){const m=machineById(curMid);
   $("dMini").innerHTML=miniHTML(m);
@@ -49,13 +53,13 @@ function renderTasks(){const m=machineById(curMid);
     if(ast==="done"){ // อนุมัติแล้วครบ 100% → ดูอย่างเดียว
       return `<div class="tcard done locked" data-i="${i}">
         <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-done">✓ เสร็จแล้ว · 100%</span></div>
-        <div class="tc-dates">📅 ${dmy(t.start)} → ${dmy(t.finish)}</div>
+        ${daysLine(t,i)}
         <div class="tc-ro"><span>👥 จำนวนคน: <b>${t.labor??"—"}</b></span><span>📝 หมายเหตุ: ${t.note?escapeHtml(t.note):"—"}</span><span class="ro-tag">🔒 ดูอย่างเดียว</span></div>
       </div>`;}
     const pend=pendingFor(curMid,i);const dp=pend?(+pend.prog||0):ap;const dl=pend?pend.labor:t.labor;const dn=pend?pend.note:t.note;const dst=dp>=100?"done":(dp>0?"prog":"todo");
     return `<div class="tcard ${dst}" data-i="${i}">
       <div class="tc-top"><div class="tc-name">${escapeHtml(t.name)}</div><span class="tc-badge s-${dst}">${STLABEL[dst]} · ${dp}%</span>${pend?'<span class="pendtag">⏳ รอตรวจสอบ</span>':''}</div>
-      <div class="tc-dates">📅 ${dmy(t.start)} → ${dmy(t.finish)}</div>
+      ${daysLine(t,i)}
       <div class="tc-grid">
         <div class="tc-fld"><label>จำนวนคน</label>
           <div class="stepper"><button type="button" class="stp" data-stp="-1" aria-label="ลด">−</button><input class="num edit" type="number" min="0" step="1" value="${dl??""}" data-f="labor" inputmode="numeric"><button type="button" class="stp" data-stp="1" aria-label="เพิ่ม">＋</button></div>
