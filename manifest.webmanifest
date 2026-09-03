@@ -1,0 +1,23 @@
+{
+  "name": "ระบบติดตามงานซ่อมลูกหีบ",
+  "short_name": "ซ่อมลูกหีบ",
+  "description": "แผนงานซ่อมเครื่องจักร สถานีหีบอ้อย ปีการผลิต 2568/69",
+  "lang": "th",
+  "dir": "ltr",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#e9ecf0",
+  "theme_color": "#0e7c8b",
+  "categories": ["productivity", "business"],
+  "icons": [
+    { "src": "icon-192.png?v=36", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png?v=36", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png?v=36", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "กรอกข้อมูล", "short_name": "กรอกข้อมูล", "url": "index.html" },
+    { "name": "Dashboard ผู้บริหาร", "short_name": "Dashboard", "url": "dashboard.html" }
+  ]
+}

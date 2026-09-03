@@ -153,13 +153,13 @@ function renderForecast(){const el=$("forecast");if(!el)return;const rng=project
       <div><span>จริง / แผน</span><b>${act.toFixed(1)}% / ${plan.toFixed(1)}%</b></div>
       <div><span>SPI</span><b class="${spi>=1?'g':(spi>=.9?'a':'r')}">${spi.toFixed(2)}</b></div>
     </div></div>`;}
-function render(){renderPeriodBar();renderForecast();renderKPI();renderJobsTable();renderAlerts();drawCurve();}
+function render(){renderPeriodBar();renderForecast();renderKPI();renderJobsTable();renderAlerts();drawCurve();renderCalendar();}
 function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderAlerts();}
 async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();renderKPI();}
 async function loadSnaps(){const raw=await fetchSnapshots();if(!raw)return null;return raw.map(s=>({serial:serialOfDMY(s.date),overall:s.overall,plan:s.plan}));}
 function serialOfDMY(str){if(!str)return null;const s=String(str);const p=s.split("/");if(p.length>=3&&p[2].length<=4)return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));const d=new Date(s);return isNaN(d)?null:dToSerial(new Date(d.getFullYear(),d.getMonth(),d.getDate()));}
 
-$("btnCal").addEventListener("click",()=>{const c=$("calCard");const show=c.style.display==="none";c.style.display=show?"block":"none";if(show){renderCalendar();c.scrollIntoView({behavior:"smooth"});}});
+// ปฏิทินแสดงเป็นค่าเริ่มต้นเสมอ (เอาปุ่มออกแล้ว) — วาดใน render()
 $("dtClose").addEventListener("click",closeDetail);$("dtScrim").addEventListener("click",closeDetail);
 {const c=$("dvClose");if(c)c.addEventListener("click",closeDayView);const s=$("dvScrim");if(s)s.addEventListener("click",closeDayView);}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("detail").classList.contains("on"))closeDetail();});

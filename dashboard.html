@@ -4,10 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard — งานซ่อมลูกหีบ</title>
-<link rel="icon" type="image/png" href="logo.png?v=35">
-<link rel="apple-touch-icon" href="logo.png?v=35">
+<link rel="icon" type="image/png" href="logo.png?v=36">
+<link rel="apple-touch-icon" href="icon-192.png?v=36">
+<link rel="manifest" href="manifest.webmanifest?v=36">
+<meta name="theme-color" content="#0e7c8b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ซ่อมลูกหีบ">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=35">
+<link rel="stylesheet" href="shared.css?v=36">
 <style>
 .jtbl{width:100%;border-collapse:collapse;font-size:13px}
 .jtbl th{font-size:11px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 8px;border-bottom:2px solid var(--line)}
@@ -65,7 +71,7 @@
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <img class="logo" src="logo.png?v=35" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
+      <img class="logo" src="logo.png?v=36" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
       <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
       <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
@@ -74,7 +80,6 @@
     <label class="snapwrap" title="เลือกวันที่บันทึกผล"><span class="ic">📅</span><input type="date" id="snapDate" min="2026-09-01"></label>
     <button class="tbtn" id="btnSnap">บันทึกผล</button>
     <button class="tbtn" id="btnSync" title="คลิกเพื่อดึงข้อมูลล่าสุดจากชีท">ซิงค์</button>
-    <button class="tbtn" id="btnCal">ปฏิทิน</button>
     <button class="tbtn" id="btnExport">ส่งออก</button>
     <button class="tbtn" id="btnImport">นำเข้า</button>
     <button class="tbtn" id="btnTheme">ธีม</button>
@@ -109,7 +114,7 @@
   </div>
 
 
-  <div class="card cal" id="calCard" style="margin-top:18px;display:none">
+  <div class="card cal" id="calCard" style="margin-top:18px">
     <div class="sec-title"><div class="sec-ic">📅</div><h2>ปฏิทินวันทำงาน / วันหยุด</h2><span class="pill">ก.ย.–พ.ย. 2026</span></div>
     <div class="calmonths" id="calMonths"></div>
     <div class="calleg">
@@ -139,7 +144,8 @@
   <div class="dbody tblwrap" id="dtBody"></div>
 </aside>
 
-<script src="shared.js?v=35"></script>
-<script src="dashboard.js?v=35"></script>
+<script src="shared.js?v=36"></script>
+<script src="dashboard.js?v=36"></script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>
