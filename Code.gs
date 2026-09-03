@@ -21,6 +21,7 @@
 
 var STATE_SHEET = '_state';
 var TABLE_SHEET = 'ชีต1';
+var LOG_SHEET   = 'LogBook';   // ประวัติการบันทึกรายวัน (ทุก entry = 1 แถว)
 
 /* กุญแจลับ — ต้องตรงกับ SYNC_KEY ใน shared.js ทุกคำขอที่ไม่มี key ที่ถูกต้องจะถูกปฏิเสธ
    เปลี่ยนได้: ตั้งค่าใหม่ตรงนี้ แล้วแก้ SYNC_KEY ใน shared.js ให้ตรงกัน */
@@ -56,6 +57,7 @@ function doPost(e) {
     if (body && body.data && body.data.groups) {
       setState_(body.data);
       writeTable_(body.data);
+      writeLogBook_(body.data);
       return json_({ ok: true, savedAt: new Date().toISOString() });
     }
     return json_({ ok: false, error: 'invalid payload' });
@@ -140,6 +142,31 @@ function writeTable_(data) {
   var stamp = ss.getSheetByName(TABLE_SHEET);
   stamp.getRange(rows.length + 2, 1).setValue('อัปเดตล่าสุด: ' +
     Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'));
+}
+
+/* ประวัติการบันทึกรายวัน — เขียน log ทั้งหมดเป็นแถว (เก็บได้เรื่อยๆ ทุกวัน) */
+function writeLogBook_(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(LOG_SHEET);
+  if (!sh) { sh = ss.insertSheet(LOG_SHEET); }
+  sh.clear();
+  var head = ['วันที่', 'เครื่องจักร', 'งาน (Task)', 'ผู้บันทึก', 'จำนวนคน', '% คืบหน้า', 'หมายเหตุ', 'สถานะ', 'เวลาบันทึก'];
+  var logs = (data.logs || []).slice().sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+  var rows = [head];
+  logs.forEach(function (L) {
+    rows.push([
+      L.date || '', L.machineName || '', L.taskName || '', L.by || '',
+      (L.labor == null ? '' : L.labor), (L.prog || 0) / 100, L.note || '',
+      (L.status === 'approved' ? 'ตรวจแล้ว' : 'รอตรวจสอบ'),
+      L.ts ? Utilities.formatDate(new Date(L.ts), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : ''
+    ]);
+  });
+  if (rows.length < 2) rows.push(['— ยังไม่มีการบันทึก —', '', '', '', '', '', '', '', '']);
+  sh.getRange(1, 1, rows.length, head.length).setValues(rows);
+  sh.getRange(1, 1, 1, head.length).setFontWeight('bold').setBackground('#e0453b').setFontColor('#ffffff');
+  if (rows.length > 1) sh.getRange(2, 6, rows.length - 1, 1).setNumberFormat('0%');
+  sh.setFrozenRows(1);
+  try { sh.autoResizeColumns(1, head.length); } catch (e) {}
 }
 
 function json_(o) {

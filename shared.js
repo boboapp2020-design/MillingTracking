@@ -136,10 +136,10 @@ async function saveSnapshot(){
   }catch(e){if(btn)btn.textContent=old;notify("เชื่อมต่อไม่ได้","ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่","err");}
 }
 async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetch(syncGet("snap=1"));const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
-async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
+async function pullRemote(silent,force){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
   try{const res=await fetch(syncGet());const j=await res.json();
     if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;const localT=DATA.updated||0,remoteT=remote.updated||0;const localFresh=WAS_SEED;
-      if(remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(remote);save();render();}
+      if(force||remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(remote);save();render();}
       lastSync=new Date();setSyncBtn("ok","ดึงข้อมูลจากชีทแล้ว "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));return true;}
     setSyncBtn("err","ชีทยังไม่มีข้อมูล");return false;
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้");return false;}
@@ -147,7 +147,7 @@ async function pullRemote(silent){if(!syncUrl)return false;if(!silent)setSyncBtn
 function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
   const sDate=$("snapDate");if(sDate){const t=new Date();const q=n=>String(n).padStart(2,"0");const iso=t.getFullYear()+"-"+q(t.getMonth()+1)+"-"+q(t.getDate());sDate.value=iso;sDate.max=iso;sDate.min="2026-09-01";}
-  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); await pullRemote(); });  // คลิก = ดึงข้อมูลล่าสุดจากชีท (ไม่มี prompt แก้ URL)
+  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); const ok=await pullRemote(false,true); if(ok&&typeof notify==="function")notify("ซิงค์สำเร็จ","ดึงข้อมูลล่าสุดจากชีทมาแสดงแล้ว"); });  // คลิก = ดึงข้อมูลจากชีทมาทับเสมอ (force)
 }
 /* ---- cane-truck race: วิ่งตาม % งานซ่อมรวมทั้งแผนก เข้าเส้นชัยที่ 100% ---- */
 function renderRace(){const t=$("truck");if(!t)return;
