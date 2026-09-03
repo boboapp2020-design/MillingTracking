@@ -16,8 +16,8 @@ function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=a
   const nJobs=jobs().length;let done=0,prog=0,todo=0;jobs().forEach(m=>{const s=machineStatus(m);if(s==="done")done++;else if(s==="prog")prog++;else todo++;});
   const tag=d=>d>=-0.05?`<span class="tag up">▲ +${Math.abs(d).toFixed(1)}%</span>`:`<span class="tag down">▼ ${d.toFixed(1)}%</span>`;
   $("kpis").innerHTML=`
-   <div class="card kpi ${diffToday>=-0.05?'g':'o'}"><div class="ic">📆</div><div class="body"><div class="lab">เกิดจริงวันนี้ · เทียบเป้าวันนี้</div><div class="val">${actToday.toFixed(1)}<small>%</small></div><div class="meta">เป้าวันนี้ <b>${planToday.toFixed(1)}%</b> · ${tag(diffToday)}</div></div></div>
-   <div class="card kpi ${diff>=-0.05?'g':'o'}"><div class="ringwrap"><div class="ring" style="--p:${act.toFixed(1)}"><span>${act.toFixed(0)}%</span></div></div><div class="body"><div class="lab">เกิดจริงสะสม · เทียบเป้าสะสม</div><div class="val">${act.toFixed(1)}<small>%</small></div><div class="meta">เป้าสะสม <b>${plan.toFixed(1)}%</b> · ${tag(diff)}</div></div></div>
+   <div class="card kpi ${diffToday>=-0.05?'g':'o'}"><div class="ic">📆</div><div class="body"><div class="lab">เกิดจริงวันนี้ · เทียบเป้าวันนี้</div><div class="val">${actToday.toFixed(1)}<small>%</small></div><div class="meta">เป้าวันนี้ <b style="font-size:19px;color:var(--brand2)">${planToday.toFixed(1)}%</b> · ${tag(diffToday)}</div></div></div>
+   <div class="card kpi ${diff>=-0.05?'g':'o'}"><div class="ringwrap"><div class="ring" style="--p:${act.toFixed(1)}"><span>${act.toFixed(0)}%</span></div></div><div class="body"><div class="lab">เกิดจริงสะสม · เทียบเป้าสะสม</div><div class="val">${act.toFixed(1)}<small>%</small></div><div class="meta">เป้าสะสม <b style="font-size:19px;color:var(--brand2)">${plan.toFixed(1)}%</b> · ${tag(diff)}</div></div></div>
    <div class="card kpi ${spi>=1?'g':'o'}"><div class="ic">${spi>=1?'🚀':'🐢'}</div><div class="body"><div class="lab">ดัชนีตามแผน (SPI)</div><div class="val">${spi.toFixed(2)}</div><div class="meta">${spi>=1?'เร็ว / ตามแผน':'ช้ากว่าแผน'}</div></div></div>
    <div class="card kpi b"><div class="ic">🛠️</div><div class="body"><div class="lab">จำนวนงานทั้งหมด</div><div class="val">${nJobs} <small>งาน</small></div><div class="meta"><span style="color:var(--green)">${done} เสร็จ</span> · <span style="color:var(--amber)">${prog} ทำ</span> · <span style="color:var(--grey)">${todo} รอ</span></div></div></div>`;}
 
@@ -27,16 +27,13 @@ function renderJobsTable(){const total=totalMandays();
   const body=rows.map(r=>{const lag=r.plan-r.act;const sev=lag>15?"var(--red)":(lag>6?"var(--amber)":(r.act>=r.plan?"var(--green)":"var(--ink2)"));const stTxt={done:"เสร็จ",prog:"กำลังทำ",todo:"ยังไม่เริ่ม"}[r.st];
     return `<tr data-mid="${r.m.id}">
       <td class="jn"><span class="dotm" style="background:${STCOL[r.st]}"></span>${r.name}${r.owner?`<div class="jo">👤 ${escapeHtml(r.owner)}</div>`:""}</td>
-      <td class="rt"><b>${r.weight.toFixed(2)}%</b></td>
-      <td class="rt"><b>${Math.round(r.mh)}</b><div class="jsub" style="color:${(r.mh-r.used)<0?'var(--red)':'var(--ink2)'};font-weight:700">เหลือ ${Math.round(r.mh-r.used)}</div></td>
-      <td class="jbar"><div class="bar"><i style="width:${r.act.toFixed(1)}%;background:${STCOL[r.st]}"></i><o style="left:${Math.min(r.plan,100).toFixed(1)}%"></o></div></td>
       <td class="rt">${r.plan.toFixed(0)}%</td>
       <td class="rt"><b style="color:${STCOL[r.st]}">${r.act.toFixed(0)}%</b></td>
       <td class="rt" style="color:${sev};font-weight:700">${lag>0.5?"−"+lag.toFixed(0):(lag<-0.5?"+"+(-lag).toFixed(0):"0")}%</td>
       <td><span class="chipst" style="color:${STCOL[r.st]};background:color-mix(in srgb,${STCOL[r.st]} 14%,transparent)">${stTxt}</span></td>
       <td class="rt"><button class="drill" data-mid="${r.m.id}">รายละเอียด ›</button></td></tr>`;}).join("");
   $("jobsTable").innerHTML=`<table class="jtbl"><thead><tr>
-      <th>Job / เครื่องจักร</th><th class="rt">น้ำหนัก</th><th class="rt">Man-hr<br><span style="font-weight:400;opacity:.6">เป้า/เหลือ</span></th><th style="width:150px">ความคืบหน้า (ขีด=แผน)</th><th class="rt">แผน</th><th class="rt">จริง</th><th class="rt">ต่าง</th><th>สถานะ</th><th></th>
+      <th>Job / เครื่องจักร</th><th class="rt">แผน</th><th class="rt">จริง</th><th class="rt">ต่าง</th><th>สถานะ</th><th></th>
     </tr></thead><tbody>${body}</tbody></table>`;
   $("jobsTable").querySelectorAll("tr[data-mid]").forEach(tr=>tr.addEventListener("click",()=>openDetail(tr.dataset.mid)));}
 
@@ -99,7 +96,8 @@ function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.d
 function openDetail(mid){const m=machineById(mid);if(!m)return;const g=groupOf(m);const a=machineActual(m);const total=totalMandays();
   $("dtTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');
   $("dtSub").textContent=g.name+" · "+m.tasks.length+" งาน"+(m.owner?" · "+m.owner:"");
-  $("dtMini").innerHTML=`<div class="m"><div class="l">ความคืบหน้า</div><div class="v" style="color:${STCOL[machineStatus(m)]}">${a.localPct.toFixed(1)}%</div></div><div class="m"><div class="l">ตามแผนวันนี้</div><div class="v">${machinePlanPct(m).toFixed(1)}%</div></div><div class="m"><div class="l">น้ำหนัก (โปรเจกต์)</div><div class="v">${isExcluded(m)?'แยก':a.weight.toFixed(2)+'%'}</div></div><div class="m"><div class="l">งานรวม</div><div class="v">${Math.round(a.rawMH)} <span style="font-size:11px;color:var(--ink2)">man-hr</span></div></div>`;
+  const _used=machineConsumedMH(m),_tgt=a.rawMH,_rem=_tgt-_used;
+  $("dtMini").innerHTML=`<div class="m"><div class="l">Man-hour รวม (เป้า)</div><div class="v">${Math.round(_tgt)} <span style="font-size:11px;color:var(--ink2)">man-hr</span></div></div><div class="m"><div class="l">ใช้ไปแล้ว</div><div class="v" style="color:var(--amber)">${Math.round(_used)}</div></div><div class="m"><div class="l">คงเหลือ</div><div class="v" style="color:${_rem<0?'var(--red)':'var(--green)'}">${Math.round(_rem)}</div></div>`;
   $("dtBody").innerHTML=`<table class="dttbl"><thead><tr><th>งาน (Task)</th><th class="rt">คน</th><th class="rt">วัน</th><th class="rt">man-hr</th><th class="rt">%ใน Job</th><th>เริ่ม–เสร็จ</th><th class="rt">%</th></tr></thead><tbody>`+
     m.tasks.map(t=>{const st=t.prog>=100?"done":(t.prog>0?"prog":"todo");const nw=manhour(t)===0;
       return `<tr><td>${escapeHtml(t.name)}${t.note?`<div class="note-flag">⚑ ${escapeHtml(t.note)}</div>`:""}</td><td class="rt">${t.labor??"—"}</td><td class="rt">${t.days??"—"}</td><td class="rt">${nw?"—":manhour(t)}</td><td class="rt">${nw?"—":taskWeightInJob(t,m).toFixed(1)+"%"}</td><td style="font-size:11px;color:var(--ink2);white-space:nowrap">${fmtG(t.start)}${t.finish!=null?" – "+fmtG(t.finish):""}</td><td class="rt"><b style="color:${STCOL[st]}">${t.prog||0}%</b></td></tr>`;}).join("")+
@@ -152,8 +150,8 @@ function renderForecast(){const el=$("forecast");if(!el)return;const rng=project
       <div><span>จริง / แผน</span><b>${act.toFixed(1)}% / ${plan.toFixed(1)}%</b></div>
       <div><span>SPI</span><b class="${spi>=1?'g':(spi>=.9?'a':'r')}">${spi.toFixed(2)}</b></div>
     </div></div>`;}
-function render(){renderPeriodBar();renderForecast();renderKPI();renderJobsTable();renderAlerts();renderGroups();drawCurve();}
-function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderGroups();renderAlerts();}
+function render(){renderPeriodBar();renderForecast();renderKPI();renderJobsTable();renderAlerts();drawCurve();}
+function onThemeChange(){drawCurve();renderKPI();renderJobsTable();renderAlerts();}
 async function onSyncConnected(){SNAPS=await loadSnaps();drawCurve();renderKPI();}
 async function loadSnaps(){const raw=await fetchSnapshots();if(!raw)return null;return raw.map(s=>({serial:serialOfDMY(s.date),overall:s.overall,plan:s.plan}));}
 function serialOfDMY(str){if(!str)return null;const s=String(str);const p=s.split("/");if(p.length>=3&&p[2].length<=4)return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));const d=new Date(s);return isNaN(d)?null:dToSerial(new Date(d.getFullYear(),d.getMonth(),d.getDate()));}
