@@ -130,23 +130,29 @@ function renderForecast(){const el=$("forecast");if(!el)return;const rng=project
   const remainPlanWork=Math.max(1,workingSerials(base,s1).length);
   const minElapsed=Math.max(5,Math.round(totalWork*0.2)); // ต้องมีข้อมูลพอก่อนจึงคาดวันได้แม่น
   const reqRate=(100-act)/remainPlanWork; // ต้องทำ %/วันทำงาน ที่เหลือ เพื่อทันแผน
-  let cls,icon,verdict,sub,projDate;
-  if(act>=99.95){cls="ok";icon="🎉";verdict="งานซ่อมเสร็จครบ 100% แล้ว";sub="ปิดงานเรียบร้อยตามเป้าหมาย";projDate=fmtTH(base);}
-  else if(act<=0.1||elapsed<=0){cls="wait";icon="⏳";verdict="ยังไม่เริ่มงาน / ยังไม่มีข้อมูล";sub="เริ่มบันทึก % ความคืบหน้าเพื่อคาดการณ์วันเสร็จ";projDate="—";}
-  else if(elapsed<minElapsed||act<10){ // ช่วงเริ่มต้น/ข้อมูลน้อย: ประเมินจาก SPI ยังไม่ฟันธงวันเสร็จ
-    const onpace=spi>=0.95;cls=onpace?"ok":(spi>=0.8?"warn":"late");icon=onpace?"🟢":(spi>=0.8?"🟡":"🔴");
-    verdict=onpace?"เริ่มต้นได้ตามแผน":(spi>=0.8?"เริ่มต้นช้ากว่าแผนเล็กน้อย":"ตอนนี้ช้ากว่าแผน");
+  // ลูกบอลสถานะ: สีตาม "ระยะห่างจากเป้า" (จริง − แผน, จุดเปอร์เซ็นต์) — เขียว ≥ 0 · ส้ม ห่างไม่เกิน 3 · แดง ห่างเกิน 3
+  const gap=act-plan;
+  const gapCls=gap>=-0.05?"ok":(gap>-3?"warn":"late");
+  let cls,verdict,sub,projDate;
+  if(act>=99.95){cls="ok";verdict="งานซ่อมเสร็จครบ 100% แล้ว";sub="ปิดงานเรียบร้อยตามเป้าหมาย";projDate=fmtTH(base);}
+  else if(act<=0.1||elapsed<=0){cls="wait";verdict="ยังไม่เริ่มงาน / ยังไม่มีข้อมูล";sub="เริ่มบันทึก % ความคืบหน้าเพื่อคาดการณ์วันเสร็จ";projDate="—";}
+  else if(elapsed<minElapsed||act<10){ // ช่วงเริ่มต้น/ข้อมูลน้อย: ตัดสินจากระยะห่างจากเป้า ยังไม่ฟันธงวันเสร็จ
+    cls=gapCls;
+    verdict=cls==="ok"?"เริ่มต้นได้ตามแผน":(cls==="warn"?`ช้ากว่าแผนเล็กน้อย (ห่าง ${Math.abs(gap).toFixed(1)}%)`:`ตอนนี้ช้ากว่าแผน (ห่าง ${Math.abs(gap).toFixed(1)}%)`);
     sub=`ผ่านไป ${elapsed}/${totalWork} วันทำงาน · ทำได้ ${act.toFixed(1)}% (แผน ${plan.toFixed(1)}%) · SPI ${spi.toFixed(2)} — ต้องทำเฉลี่ย ${reqRate.toFixed(2)}%/วันจึงจะทันกำหนด`;projDate="—";}
   else{const rate=act/elapsed,remain=100-act,need=remain/rate,projSerial=addWork(base,need);
     const capW=totalWork*2; const capped=(workingSerials(base,projSerial).length>capW);
     projDate=capped?("หลัง "+fmtTH(s1)):fmtTH(projSerial);
-    if(projSerial<=s1){cls="ok";icon="🟢";const ahead=Math.max(0,workingSerials(projSerial,s1).length-1);
+    if(projSerial<=s1){cls="ok";const ahead=Math.max(0,workingSerials(projSerial,s1).length-1);
       verdict="คาดว่าเสร็จทันกำหนด";sub=(ahead>0?`เร็วกว่ากำหนด ~${ahead} วันทำงาน · `:`พอดีกำหนด · `)+`ความเร็วเฉลี่ย ${rate.toFixed(2)}%/วันทำงาน`;}
     else{const lateW=Math.max(1,workingSerials(s1,projSerial).length-1);
-      if(lateW<=3){cls="warn";icon="🟡";verdict=`เสี่ยงเลยกำหนด ~${lateW} วันทำงาน — ต้องเร่ง`;}
-      else{cls="late";icon="🔴";verdict=capped?"คาดว่าล่าช้ากว่าแผนมาก หากคงอัตราปัจจุบัน":`คาดว่าล่าช้ากว่าแผน ~${lateW} วันทำงาน`;}
+      if(lateW<=3){cls="warn";verdict=`เสี่ยงเลยกำหนด ~${lateW} วันทำงาน — ต้องเร่ง`;}
+      else{cls="late";verdict=capped?"คาดว่าล่าช้ากว่าแผนมาก หากคงอัตราปัจจุบัน":`คาดว่าล่าช้ากว่าแผน ~${lateW} วันทำงาน`;}
       sub=`ต้องเร่งความเร็วเป็น ${reqRate.toFixed(2)}%/วัน (ปัจจุบัน ${rate.toFixed(2)}%/วัน)`;}}
-  el.innerHTML=`<div class="fc ${cls}"><div class="fc-ic">${icon}</div>
+  // ลูกบอล: สีตามระยะห่างจากเป้าเสมอ (ไม่ใช้ emoji — บางเครื่องไม่มีฟอนต์ ขึ้นเป็นกล่องสี่เหลี่ยม)
+  const ballCls=cls==="wait"?"grey":(act>=99.95?"ok":gapCls);
+  const gapTxt=cls==="wait"?"—":(gap>=0?"+":"−")+Math.abs(gap).toFixed(1)+"%";
+  el.innerHTML=`<div class="fc ${cls}"><div class="fc-ic" title="ระยะห่างจากเป้า (จริง − แผน)"><span class="fc-ball ${ballCls}"></span><small>${gapTxt}</small></div>
     <div class="fc-main"><div class="fc-lab">ประเมินกำหนดเสร็จ · Completion Forecast</div><div class="fc-verdict">${verdict}</div><div class="fc-sub">${sub}</div></div>
     <div class="fc-stats">
       <div><span>คาดว่าเสร็จ</span><b class="${cls==='late'?'r':(cls==='warn'?'a':'g')}">${projDate}</b></div>

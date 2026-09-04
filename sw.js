@@ -5,7 +5,7 @@
    - version.json และ URL ที่มี ?t= / ?u=  → ไม่เก็บ cache (กันสะสม entry ไม่รู้จบ)
    - cross-origin (Google Sheet sync / Google Fonts) → ปล่อยผ่าน network ปกติ
    - เทียบ cache แบบ ignoreSearch → ?v=N / ?u=ts ไม่ทำให้พลาด cache ตอนออฟไลน์ */
-const VER = 'v45';
+const VER = 'v46';
 const CACHE = 'milling-' + VER;
 const SHELL = [
   './', 'index.html', 'dashboard.html',
