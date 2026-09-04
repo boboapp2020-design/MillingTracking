@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=41; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=42; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -123,7 +123,25 @@ const STCOL={done:"var(--green)",prog:"var(--amber)",todo:"var(--grey)"};
 function planPctUpTo(serial){const total=totalMandays();let acc=0;DATA.groups.forEach(g=>g.machines.forEach(m=>{if(isExcluded(m))return;m.tasks.forEach(t=>{const mh=manhour(t);if(mh<=0)return;const ws=workingSerials(t.start,t.finish);if(!ws.length)return;acc+=mh/total*100*ws.filter(x=>x<=serial).length/ws.length;})}));return acc;}
 function actualPct(){const total=totalMandays();let acc=0;DATA.groups.forEach(g=>g.machines.forEach(m=>{if(isExcluded(m))return;m.tasks.forEach(t=>{acc+=manhour(t)/total*(t.prog||0);})}));return acc;}
 function projectRange(){let mn=null,mx=null;DATA.groups.forEach(g=>g.machines.forEach(m=>m.tasks.forEach(t=>{if(t.start!=null)mn=mn==null?t.start:Math.min(mn,t.start);if(t.finish!=null)mx=mx==null?t.finish:Math.max(mx,t.finish);})));return {min:mn??46266,max:mx??46330};}
-const TODAY_SERIAL=(()=>{const n=new Date();n.setHours(0,0,0,0);return dToSerial(n);})();
+/* ---- "วันนี้" ยึดเวลาไทย (Asia/Bangkok) เสมอ ไม่ว่าเครื่องตั้ง timezone อะไร ---- */
+function thaiDMY(d){try{const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Bangkok",day:"2-digit",month:"2-digit",year:"numeric"}).formatToParts(d||new Date());const g=t=>p.find(x=>x.type===t).value;return g("day")+"/"+g("month")+"/"+g("year");}
+  catch(e){const x=d||new Date();return String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0")+"/"+x.getFullYear();}}
+function dmyToSerial(s){if(!s)return null;const p=String(s).split("/");if(p.length<3)return null;const d=+p[0],m=+p[1],y=+p[2];if(!(d>0&&m>0&&y>2000))return null;return dToSerial(new Date(y,m-1,d));}
+const TODAY_DMY=thaiDMY();
+const TODAY_SERIAL=dmyToSerial(TODAY_DMY);
+/* ---- ล็อก logic "เกิดจริงวันนี้" (ผู้ใช้กำหนด 04/09/2026) ----
+   ยึด "วันที่บันทึก" (L.date) ของ log ที่ "ตรวจแล้ว" เท่านั้น · 1 วันที่ = 1 วัน · ไม่พึ่ง Snapshot
+   %ที่เกิดในวัน D ของงานหนึ่ง = max(%log วันที่ D) − max(%log ที่วันที่ < D)  (ไม่ติดลบ)
+   เกิดจริงวันนี้ (ภาพรวม) = Σ น้ำหนักงาน × %ที่เกิดในวันนั้น */
+function actualDeltaOnDate(dmy){const ser=dmyToSerial(dmy);if(ser==null)return 0;const total=totalMandays();let acc=0;
+  DATA.groups.forEach(g=>g.machines.forEach(m=>{if(isExcluded(m))return;m.tasks.forEach((t,i)=>{
+    let before=0,onDay=null;
+    (DATA.logs||[]).forEach(L=>{if(!L||L.status!=="approved"||L.mid!==m.id||L.ti!==i)return;const ls=dmyToSerial(L.date);if(ls==null)return;const p=+L.prog||0;
+      if(ls<ser){if(p>before)before=p;}else if(ls===ser){if(onDay==null||p>onDay)onDay=p;}});
+    if(onDay!=null&&onDay>before)acc+=manhour(t)/total*(onDay-before);
+  });}));
+  return acc;}
+function planDeltaOnSerial(ser){return Math.max(0,planPctUpTo(ser)-planPctUpTo(ser-1));} // เป้าเฉพาะวันนั้น
 function machineById(id){for(const g of DATA.groups)for(const m of g.machines)if(m.id===id)return m;return null;}
 function groupOf(m){return DATA.groups.find(gr=>gr.machines.includes(m));}
 function jobs(){return DATA.groups.flatMap(g=>g.machines).filter(m=>!isExcluded(m));}
@@ -190,7 +208,7 @@ async function saveSnapshot(){
   if(sel&&sel.value){const q=sel.value.split("-").map(Number);dt=new Date(q[0],q[1]-1,q[2]);}
   if(dToSerial(dt)<46266){notify("วันที่ไม่ถูกต้อง","บันทึกย้อนหลังได้ไม่เกิน 01/09/2026","err");return;}
   const P=n=>String(n).padStart(2,"0");const ds=P(dt.getDate())+"/"+P(dt.getMonth()+1)+"/"+dt.getFullYear();const ser=dToSerial(dt);const now=new Date();
-  const snap={date:ds,time:now.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}),overall:+actualPct().toFixed(2),plan:+planPctUpTo(ser).toFixed(2),jobs:js};
+  const snap={date:ds,time:now.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}),overall:+actualPct().toFixed(2),plan:+planPctUpTo(ser).toFixed(2),jobs:js,formula:2}; // formula:2 = สูตร คน×วัน×8 (ตั้งต้น 03/09/2026)
   const btn=$("btnSnap");const old=btn?btn.textContent:"";if(btn)btn.textContent="⏳ กำลังบันทึก…";
   try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"snapshot",snapshot:snap,key:SYNC_KEY})});
     const j=await res.json();

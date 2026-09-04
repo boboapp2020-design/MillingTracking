@@ -10,15 +10,14 @@ function renderPeriodBar(){const asof=new Date().toLocaleString("th-TH",{day:"2-
   $("periodBar").innerHTML=`<span class="chip">ช่วงแผนงาน <b>${fmtTH(mn)} – ${fmtTH(mx)}</b></span><span class="chip">ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก man-hour (คน × วัน × 8 ชม.) · 10 Jobs = 100%</span>`;}
 
 function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=act-plan;const rng=projectRange();const spi=plan>0?act/plan:1;
-  // ค่าวันนี้ = เทียบกับ snapshot ล่าสุดก่อนวันนี้ (ถ้ามี) มิฉะนั้นเทียบจากต้นโครงการ
-  let baseAct=0,basePlan=0;
-  if(SNAPS&&SNAPS.length){const prev=SNAPS.filter(s=>s.serial!=null&&s.serial<TODAY_SERIAL).sort((a,b)=>b.serial-a.serial)[0];
-    if(prev){baseAct=+prev.overall||0;basePlan=planPctUpTo(prev.serial);}}
-  const actToday=Math.max(0,act-baseAct),planToday=Math.max(0,plan-basePlan),diffToday=actToday-planToday;
-  const nJobs=jobs().length;let done=0,prog=0,todo=0;jobs().forEach(m=>{const s=machineStatus(m);if(s==="done")done++;else if(s==="prog")prog++;else todo++;});
+  // ล็อก logic "วันนี้" (ผู้ใช้กำหนด 04/09/2026): ยึด "วันที่บันทึก" ของ log ที่อนุมัติแล้วเท่านั้น ตามเวลาไทย
+  //   เกิดจริงวันนี้ = ผลรวม (น้ำหนักงาน × %ที่เพิ่มขึ้นจาก log ที่ลงวันที่วันนี้) — 1 วันที่ = 1 วัน, ไม่พึ่ง Snapshot, ไม่มี fallback
+  //   เป้าวันนี้    = แผนสะสมถึงวันนี้ − แผนสะสมถึงเมื่อวาน
   const tag=d=>d>=-0.05?`<span class="tag up">▲ +${Math.abs(d).toFixed(1)}%</span>`:`<span class="tag down">▼ ${d.toFixed(1)}%</span>`;
-  $("kpis").innerHTML=`
-   <div class="card kpi ${diffToday>=-0.05?'g':'o'}"><div class="ic">📆</div><div class="body"><div class="lab">เกิดจริงวันนี้ · เทียบเป้าวันนี้</div><div class="val">${actToday.toFixed(1)}<small>%</small></div><div class="meta">เป้าวันนี้ <b style="font-size:19px;color:var(--brand2)">${planToday.toFixed(1)}%</b> · ${tag(diffToday)}</div></div></div>
+  const actToday=actualDeltaOnDate(TODAY_DMY),planToday=planDeltaOnSerial(TODAY_SERIAL),diffToday=actToday-planToday;
+  const todayCard=`<div class="card kpi ${diffToday>=-0.05?'g':'o'}"><div class="ic">📆</div><div class="body"><div class="lab">เกิดจริงวันนี้ · เทียบเป้าวันนี้</div><div class="val">${actToday.toFixed(1)}<small>%</small></div><div class="meta">เป้าวันนี้ <b style="font-size:19px;color:var(--brand2)">${planToday.toFixed(1)}%</b> · ${tag(diffToday)} <span style="opacity:.7">· จาก log วันที่ ${TODAY_DMY}</span></div></div></div>`;
+  const nJobs=jobs().length;let done=0,prog=0,todo=0;jobs().forEach(m=>{const s=machineStatus(m);if(s==="done")done++;else if(s==="prog")prog++;else todo++;});
+  $("kpis").innerHTML=todayCard+`
    <div class="card kpi ${diff>=-0.05?'g':'o'}"><div class="ringwrap"><div class="ring" style="--p:${act.toFixed(1)}"><span>${act.toFixed(0)}%</span></div></div><div class="body"><div class="lab">เกิดจริงสะสม · เทียบเป้าสะสม</div><div class="val">${act.toFixed(1)}<small>%</small></div><div class="meta">เป้าสะสม <b style="font-size:19px;color:var(--brand2)">${plan.toFixed(1)}%</b> · ${tag(diff)}</div></div></div>
    <div class="card kpi ${spi>=1?'g':'o'}"><div class="ic">${spi>=1?'🚀':'🐢'}</div><div class="body"><div class="lab">ดัชนีตามแผน (SPI)</div><div class="val">${spi.toFixed(2)}</div><div class="meta">${spi>=1?'เร็ว / ตามแผน':'ช้ากว่าแผน'}</div></div></div>
    <div class="card kpi b"><div class="ic">🛠️</div><div class="body"><div class="lab">จำนวนงานทั้งหมด</div><div class="val">${nJobs} <small>งาน</small></div><div class="meta"><span style="color:var(--green)">${done} เสร็จ</span> · <span style="color:var(--amber)">${prog} ทำ</span> · <span style="color:var(--grey)">${todo} รอ</span></div></div></div>`;}
