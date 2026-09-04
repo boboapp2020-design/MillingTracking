@@ -439,7 +439,7 @@ footer{max-width:1340px;margin:0 auto;padding:14px 20px 34px;color:var(--ink3);f
   .tbtn{padding:9px 11px;font-size:13px;min-height:40px}
   .snapwrap{padding:6px 8px}
   .snaptxt{font-size:13px;min-width:86px}
-  #btnExport{display:none}                     /* ส่งออก Excel ใช้บนคอมพอ · Ranking แสดงบนมือถือด้วย */
+  /* ปุ่ม ส่งออก Excel + Ranking แสดงบนมือถือด้วย (ผู้ใช้ใช้บนมือถือจริง) */
   /* แผนผัง: ย่อเป็นภาพเดียว เลื่อนซ้าย-ขวา */
   .hero{padding:10px 8px 8px}
   .hero-head h2{font-size:13px}
