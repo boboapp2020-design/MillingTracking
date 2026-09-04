@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=61; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=63; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -178,17 +178,23 @@ function recorderByName(n){n=(n||"").trim();return RECORDERS.find(r=>r.name===n)
 function canonName(n){n=(n||"").trim();if(!n||n==="ไม่ระบุ")return "ไม่ระบุชื่อ";if(NAME_ALIAS[n])return NAME_ALIAS[n];const r=RECORDERS.find(r=>r.name===n||r.name==="ท้าว"+n);return r?r.name:n;}
 function rankingData(){const total=totalMandays();const byTask={};
   (DATA.logs||[]).forEach(L=>{if(!L||L.status!=="approved"||!L.mid)return;const k=L.mid+"|"+L.ti;(byTask[k]=byTask[k]||[]).push(L);});
-  const people={};
-  Object.keys(byTask).forEach(k=>{const p=k.split("|");const m=machineById(p[0]);if(!m||isExcluded(m))return;const t=m.tasks[+p[1]];if(!t)return;const w=manhour(t)/total*100;
-    const logs=byTask[k].sort((a,b)=>((dmyToSerial(a.date)||0)-(dmyToSerial(b.date)||0))||((a.ts||0)-(b.ts||0)));let prev=0;
-    logs.forEach(L=>{const pr=Math.max(0,Math.min(100,+L.prog||0));const d=Math.max(0,pr-prev);if(pr>prev)prev=pr;
-      const name=canonName(L.by);const P=people[name]=people[name]||{name,pct:0,logs:0,tasks:{},mh:0};
-      P.pct+=w*d/100;P.logs++;P.tasks[k]=1;P.mh+=(+L.labor||0)*HOURS_PER_DAY;});});
-  return Object.keys(people).map(n=>{const P=people[n];return {name:P.name,pct:P.pct,logs:P.logs,tasks:Object.keys(P.tasks).length,mh:P.mh};}).sort((a,b)=>b.pct-a.pct||b.logs-a.logs);}
+  const people={};let unattributed=0; // ความคืบหน้าที่ไม่มี log ผู้บันทึกรองรับ (งานที่ตั้งเสร็จไว้ก่อนใช้ระบบ) → รวมเป็น 1 แถว เพื่อให้ผลรวม = % ภาพรวมพอดี
+  DATA.groups.forEach(g=>g.machines.forEach(m=>{if(isExcluded(m))return;
+    m.tasks.forEach((t,ti)=>{const w=manhour(t)/total*100;if(w<=0)return;const k=m.id+"|"+ti;
+      const logs=(byTask[k]||[]).sort((a,b)=>((dmyToSerial(a.date)||0)-(dmyToSerial(b.date)||0))||((a.ts||0)-(b.ts||0)));let prev=0;
+      logs.forEach(L=>{const pr=Math.max(0,Math.min(100,+L.prog||0));const d=Math.max(0,pr-prev);if(pr>prev)prev=pr;
+        const name=canonName(L.by);const P=people[name]=people[name]||{name,pct:0,logs:0,tasks:{},mh:0};
+        P.pct+=w*d/100;P.logs++;P.tasks[k]=1;P.mh+=(+L.labor||0)*HOURS_PER_DAY;});
+      const cur=Math.max(0,Math.min(100,+t.prog||0));if(cur>prev)unattributed+=w*(cur-prev)/100;});}));
+  const rows=Object.keys(people).map(n=>{const P=people[n];return {name:P.name,pct:P.pct,logs:P.logs,tasks:Object.keys(P.tasks).length,mh:P.mh};});
+  if(unattributed>0.005)rows.push({name:"งานตั้งต้น (ไม่ระบุผู้บันทึก)",pct:unattributed,logs:0,tasks:0,mh:0,sys:true});
+  return rows.sort((a,b)=>b.pct-a.pct||b.logs-a.logs);}
 function openRanking(){const md=$("rankModal"),sc=$("rankScrim"),body=$("rankBody");if(!md||!body)return;
-  const rows=rankingData();const sum=rows.reduce((s,r)=>s+r.pct,0);const max=rows.length?Math.max(rows[0].pct,0.0001):1;const medal=["🥇","🥈","🥉"];
-  const sub=$("rankSub");if(sub)sub.textContent=rows.length?`อันดับ 1: ${rows[0].name} · ทำให้ภาพรวมขึ้น ${rows[0].pct.toFixed(2)}% · รวมทุกคน ${sum.toFixed(2)}% (จาก ${actualPct().toFixed(1)}% ทั้งหมด)`:"ยังไม่มีรายการที่ตรวจแล้ว";
-  body.innerHTML=rows.length?rows.map((r,i)=>`<div class="rk-row ${i<3?'top'+(i+1):''}"><div class="rk-no">${medal[i]||(i+1)}</div><div class="rk-main"><div class="rk-name">${escapeHtml(r.name)}</div><div class="rk-bar"><i style="width:${Math.max(2,r.pct/max*100).toFixed(1)}%"></i></div><div class="rk-meta">${r.logs} รายการ · ${r.tasks} งาน · ${r.mh} man-hour</div></div><div class="rk-pct num">+${r.pct.toFixed(2)}<small>%</small></div></div>`).join(""):'<div class="logempty">ยังไม่มีรายการที่ “ตรวจแล้ว” — อนุมัติรายการในสมุดบันทึกก่อน จึงจะจัดอันดับได้</div>';
+  const rows=rankingData();const sum=rows.reduce((s,r)=>s+r.pct,0);const ppl=rows.filter(r=>!r.sys);const max=ppl.length?Math.max(ppl[0].pct,0.0001):1;const medal=["🥇","🥈","🥉"];
+  const top=ppl[0];const sub=$("rankSub");if(sub)sub.textContent=top?`อันดับ 1: ${top.name} · ทำให้ภาพรวมขึ้น ${top.pct.toFixed(2)}% · ผลรวมทุกคน ${sum.toFixed(1)}% = % ภาพรวมทั้งหมด`:"ยังไม่มีรายการที่ตรวจแล้ว";
+  let rank=0;
+  body.innerHTML=rows.length?rows.map(r=>{if(r.sys)return `<div class="rk-row sys"><div class="rk-no">⚙️</div><div class="rk-main"><div class="rk-name">${escapeHtml(r.name)}</div><div class="rk-bar"><i style="width:${Math.max(2,r.pct/max*100).toFixed(1)}%"></i></div><div class="rk-meta">งานที่ตั้งเสร็จไว้ก่อนเริ่มใช้ระบบ (ไม่มีผู้บันทึก)</div></div><div class="rk-pct num">+${r.pct.toFixed(2)}<small>%</small></div></div>`;
+    const i=rank++;return `<div class="rk-row ${i<3?'top'+(i+1):''}"><div class="rk-no">${medal[i]||(i+1)}</div><div class="rk-main"><div class="rk-name">${escapeHtml(r.name)}</div><div class="rk-bar"><i style="width:${Math.max(2,r.pct/max*100).toFixed(1)}%"></i></div><div class="rk-meta">${r.logs} รายการ · ${r.tasks} งาน · ${r.mh} man-hour</div></div><div class="rk-pct num">+${r.pct.toFixed(2)}<small>%</small></div></div>`;}).join(""):'<div class="logempty">ยังไม่มีรายการที่ “ตรวจแล้ว” — อนุมัติรายการในสมุดบันทึกก่อน จึงจะจัดอันดับได้</div>';
   sc.classList.add("on");md.classList.add("on");}
 function closeRanking(){const md=$("rankModal"),sc=$("rankScrim");if(md)md.classList.remove("on");if(sc)sc.classList.remove("on");}
 

@@ -25,16 +25,17 @@ function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=a
 function renderJobsTable(){const total=totalMandays();
   const rows=jobs().map(m=>{const a=machineActual(m);return {m,name:m.name,weight:a.weight,plan:machinePlanPct(m),act:a.localPct,mh:a.rawMH,used:machineConsumedMH(m),st:machineStatus(m),owner:m.owner};});
   rows.sort((x,y)=>y.weight-x.weight);
-  const body=rows.map(r=>{const lag=r.plan-r.act;const sev=lag>15?"var(--red)":(lag>6?"var(--amber)":(r.act>=r.plan?"var(--green)":"var(--ink2)"));const stTxt={done:"เสร็จ",prog:"กำลังทำ",todo:"ยังไม่เริ่ม"}[r.st];
+  const body=rows.map(r=>{const lag=r.plan-r.act;const sev=lag>15?"var(--red)":(lag>6?"var(--amber)":(r.act>=r.plan?"var(--green)":"var(--ink2)"));const stTxt={done:"เสร็จ",prog:"กำลังทำ",todo:"ยังไม่เริ่ม"}[r.st];const fc=machineFinishForecast(r.m);
     return `<tr data-mid="${r.m.id}">
       <td class="jn"><span class="dotm" style="background:${STCOL[r.st]}"></span>${r.name}${r.owner?`<div class="jo">👤 ${escapeHtml(r.owner)}</div>`:""}</td>
       <td class="rt">${r.plan.toFixed(0)}%</td>
       <td class="rt"><b style="color:${STCOL[r.st]}">${r.act.toFixed(0)}%</b></td>
       <td class="rt" style="color:${sev};font-weight:700">${lag>0.5?"−"+lag.toFixed(0):(lag<-0.5?"+"+(-lag).toFixed(0):"0")}%</td>
       <td><span class="chipst" style="color:${STCOL[r.st]};background:color-mix(in srgb,${STCOL[r.st]} 14%,transparent)">${stTxt}</span></td>
+      <td${fc.title?` title="${escapeHtml(fc.title)}"`:""}><span class="fcpill ${fc.cls}">${fc.txt}</span></td>
       <td class="rt"><button class="drill" data-mid="${r.m.id}">รายละเอียด ›</button></td></tr>`;}).join("");
   $("jobsTable").innerHTML=`<table class="jtbl"><thead><tr>
-      <th>Job / เครื่องจักร</th><th class="rt">แผน</th><th class="rt">จริง</th><th class="rt">ต่าง</th><th>สถานะ</th><th></th>
+      <th>Job / เครื่องจักร</th><th class="rt">แผน</th><th class="rt">จริง</th><th class="rt">ต่าง</th><th>สถานะ</th><th>คาดว่าเสร็จ</th><th></th>
     </tr></thead><tbody>${body}</tbody></table>`;
   $("jobsTable").querySelectorAll("tr[data-mid]").forEach(tr=>tr.addEventListener("click",()=>openDetail(tr.dataset.mid)));}
 
@@ -126,20 +127,36 @@ function closeDayView(){$("dvScrim").classList.remove("on");$("dvModal").classLi
 function addWork(start,n){let s=start,cnt=0,guard=0;const need=Math.ceil(n);if(need<=0)return start;while(cnt<need&&guard<3000){s++;guard++;if(!isHoliday(sd(s)))cnt++;}return s;}
 /* วันที่บันทึก(อนุมัติแล้ว)ล่าสุดของงานนี้ = วันที่เสร็จจริง (สำหรับงานที่ 100%) */
 function lastApprovedSerial(mid,ti){let mx=null;(DATA.logs||[]).forEach(L=>{if(L.status==="approved"&&L.mid===mid&&L.ti===ti){const s=dmyToSerial(L.date);if(s!=null&&(mx==null||s>mx))mx=s;}});return mx;}
-/* คาดการณ์ "วันที่คาดว่าจะแล้วเสร็จ" ของแต่ละงาน — ระบุเป็นวันที่เสมอ */
-function taskFinishForecast(t,m,i){
-  const planFin=t.finish;
-  if(planFin==null)return {txt:"—",cls:"muted",title:"งานนี้ยังไม่กำหนดวันในแผน"};
+/* คาดการณ์ serial วันแล้วเสร็จของ 1 task (ตัวเลข) — ใช้ทั้งระดับงานหลักและงานย่อย · คืน null ถ้าไม่มีวันในแผน */
+function taskPredictedSerial(t,mid,ti){
+  const planFin=t.finish;if(planFin==null)return null;
   const pr=Math.max(0,Math.min(100,+t.prog||0)),today=TODAY_SERIAL;
-  if(pr>=100){const dfin=(m?lastApprovedSerial(m.id,i):null);const s=dfin!=null?dfin:planFin;return {txt:"✓ "+fmtG(s),cls:"ok",title:"เสร็จแล้ว"+(dfin!=null?" (วันที่บันทึกล่าสุด)":" (ตามแผน)")};}
-  if(t.days==null||!(t.days>0)||t.start==null)return {txt:fmtG(planFin),cls:"wait",title:"คาดตามกำหนดในแผน"};
-  if(today<t.start)return {txt:fmtG(planFin),cls:"wait",title:"ยังไม่ถึงกำหนดเริ่ม — คาดตามแผน"};
-  const elapsed=Math.max(1,workingSerials(t.start,today).length); // วันทำงานที่ผ่านไปตั้งแต่เริ่มถึงวันนี้
-  let predicted,note;
-  if(pr<=0){predicted=addWork(today,t.days);note="เริ่มแล้วแต่ยังไม่คืบหน้า — คาดว่าใช้เวลาเต็มตามแผนนับจากวันนี้";} // เริ่มแล้ว 0% → คาดใช้เวลาเต็มตามแผนนับจากวันนี้
-  else{const rate=pr/elapsed;predicted=addWork(today,(100-pr)/rate);note=`ความเร็วจริง ${rate.toFixed(1)}%/วันทำงาน · เหลือ ~${Math.ceil((100-pr)/rate)} วันทำงาน`;}
-  const cls=predicted<=planFin?"ok":"late";const lateDays=cls==="late"?workingSerials(planFin,predicted).length-1:0;
-  return {txt:fmtG(predicted),cls,title:note+(lateDays>0?` · ช้ากว่ากำหนด ${lateDays} วัน`:"")};}
+  if(pr>=100){const dfin=lastApprovedSerial(mid,ti);return {ser:dfin!=null?dfin:planFin,done:true,planFin};}
+  if(t.days==null||!(t.days>0)||t.start==null)return {ser:planFin,done:false,planFin};
+  if(today<t.start)return {ser:planFin,done:false,planFin};
+  const elapsed=Math.max(1,workingSerials(t.start,today).length);
+  const ser=pr<=0?addWork(today,t.days):addWork(today,(100-pr)/(pr/elapsed));
+  return {ser,done:false,planFin};}
+/* คาดการณ์วันแล้วเสร็จของแต่ละงานย่อย — ระบุเป็นวันที่เสมอ */
+function taskFinishForecast(t,m,i){
+  const p=taskPredictedSerial(t,m?m.id:null,i);
+  if(!p)return {txt:"—",cls:"muted",title:"งานนี้ยังไม่กำหนดวันในแผน"};
+  const pr=Math.max(0,Math.min(100,+t.prog||0));
+  if(p.done)return {txt:"✓ "+fmtG(p.ser),cls:"ok",title:"เสร็จแล้ว"};
+  const cls=p.ser<=p.planFin?"ok":"late";const lateDays=cls==="late"?workingSerials(p.planFin,p.ser).length-1:0;
+  const note=(t.days==null||!(t.days>0)||t.start==null||TODAY_SERIAL<t.start)?"คาดตามกำหนดในแผน":(pr<=0?"เริ่มแล้วแต่ยังไม่คืบหน้า — คาดตามแผนนับจากวันนี้":`ความเร็วจริง ${(pr/Math.max(1,workingSerials(t.start,TODAY_SERIAL).length)).toFixed(1)}%/วันทำงาน`);
+  return {txt:fmtG(p.ser),cls,title:note+(lateDays>0?` · ช้ากว่ากำหนด ${lateDays} วัน`:"")};}
+/* คาดการณ์วันแล้วเสร็จของ "งานหลัก" (เครื่องจักร 1 ตัว = 10 งาน) = วันช้าสุดของงานย่อยที่มีกำหนด */
+function machineFinishForecast(m){
+  let predMax=null,planMax=null,anyOpen=false,allDone=true,lastDone=null;
+  m.tasks.forEach((t,i)=>{const p=taskPredictedSerial(t,m.id,i);if(!p)return;
+    if(p.planFin!=null&&(planMax==null||p.planFin>planMax))planMax=p.planFin;
+    if(p.done){if(lastDone==null||p.ser>lastDone)lastDone=p.ser;}
+    else{allDone=false;anyOpen=true;if(predMax==null||p.ser>predMax)predMax=p.ser;}});
+  if(planMax==null)return {txt:"—",cls:"muted",title:"งานนี้ยังไม่กำหนดวันในแผน"};
+  if(!anyOpen)return {txt:"✓ "+fmtG(lastDone!=null?lastDone:planMax),cls:"ok",title:"เสร็จครบทุกงานย่อยแล้ว"};
+  const ser=predMax;const cls=ser<=planMax?"ok":"late";const lateDays=cls==="late"?workingSerials(planMax,ser).length-1:0;
+  return {txt:fmtG(ser),cls,title:`คาดว่าเสร็จทั้งเครื่องเมื่องานย่อยสุดท้ายเสร็จ · กำหนดแผน ${fmtG(planMax)}`+(lateDays>0?` · ช้ากว่ากำหนด ${lateDays} วัน`:"")};}
 function renderForecast(){const el=$("forecast");if(!el)return;const rng=projectRange(),s0=rng.min,s1=rng.max;
   const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),spi=plan>0?act/plan:1;
   const base=Math.min(Math.max(TODAY_SERIAL,s0),s1);const elapsed=workingSerials(s0,base).length;
