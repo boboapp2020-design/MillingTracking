@@ -304,6 +304,11 @@ body.bgphoto{background:linear-gradient(rgba(233,237,242,.55),rgba(233,237,242,.
 .lg-btn.pend{background:var(--red);color:#fff;cursor:pointer;box-shadow:0 3px 9px rgba(195,61,51,.35)}
 .lg-btn.pend:hover{filter:brightness(1.07)}
 .lg-btn.appr{background:color-mix(in srgb,var(--green) 16%,var(--panel));color:var(--green);border:1px solid color-mix(in srgb,var(--green) 35%,transparent)}
+.lg-btn.rej{background:color-mix(in srgb,var(--red) 14%,var(--panel));color:var(--red);border:1px solid color-mix(in srgb,var(--red) 38%,transparent)}
+.logrow.rej{background:color-mix(in srgb,var(--red) 7%,var(--panel));border-color:color-mix(in srgb,var(--red) 28%,transparent);opacity:.92}
+.logrow.rej .lg-num b{color:var(--ink3);text-decoration:line-through}
+.tbtn.rej{background:#fff;color:var(--red);border:1.5px solid color-mix(in srgb,var(--red) 55%,transparent)}
+.tbtn.rej:hover{background:color-mix(in srgb,var(--red) 8%,#fff)}
 /* ===== PIN modal ===== */
 .pinmodal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.94);opacity:0;pointer-events:none;z-index:52;
   background:#fff;color:#141c27;border-radius:18px;border:1px solid #c9d2dd;box-shadow:0 40px 90px -24px rgba(6,12,22,.6);

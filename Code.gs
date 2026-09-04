@@ -190,7 +190,7 @@ function writeLogBook_(data) {
     rows.push([
       L.date || '', L.machineName || '', L.taskName || '', L.by || '',
       (L.labor == null ? '' : L.labor), (L.prog || 0) / 100, L.note || '',
-      (L.status === 'approved' ? 'ตรวจแล้ว' : 'รอตรวจสอบ'),
+      (L.status === 'approved' ? 'ตรวจแล้ว' : (L.status === 'rejected' ? 'งานไม่ผ่าน (% ไม่นับ)' : 'รอตรวจสอบ')),
       L.ts ? Utilities.formatDate(new Date(L.ts), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : ''
     ]);
   });

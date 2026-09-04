@@ -124,13 +124,13 @@ function renderLog(){const el=$("logList");if(!el)return;let logs=(DATA.logs||[]
   if(q)logs=logs.filter(L=>((L.machineName||"")+" "+(L.taskName||"")+" "+(L.by||"")).toLowerCase().includes(q));
   if(!logs.length){el.innerHTML='<div class="logempty">'+(DATA.logs&&DATA.logs.length?'ไม่พบรายการที่ค้นหา':'ยังไม่มีรายการบันทึก — กรอกความคืบหน้าที่เครื่องจักรแล้วกด “บันทึก”')+'</div>';return;}
   el.innerHTML=`<div class="logrow lhead"><div class="lg-date">วันที่</div><div class="lg-main">เครื่องจักร / งาน · ผู้บันทึก</div><div class="lg-num">คน</div><div class="lg-num">%</div><div class="lg-st">สถานะ</div></div>`+
-    logs.map(L=>{const pend=L.status==='pending';const dt=fmtTaskDate(L);
-    return `<div class="logrow ${pend?'pend':'appr'}" data-id="${L.id}">
+    logs.map(L=>{const pend=L.status==='pending',rej=L.status==='rejected';const dt=fmtTaskDate(L);
+    return `<div class="logrow ${pend?'pend':(rej?'rej':'appr')}" data-id="${L.id}">
       <div class="lg-date">${escapeHtml(L.date||"—")}</div>
       <div class="lg-main"><div class="lg-task">${escapeHtml(L.machineName||"")} — ${escapeHtml(L.taskName||"")}</div>
-        <div class="lg-meta">👤 ${escapeHtml(L.by||"—")}${L.note?" · 📝 "+escapeHtml(L.note):""}${L.reviewBy?" · ✔ ตรวจโดย "+escapeHtml(L.reviewBy):""}</div></div>
+        <div class="lg-meta">👤 ${escapeHtml(L.by||"—")}${L.note?" · 📝 "+escapeHtml(L.note):""}${L.reviewBy?(rej?" · ✗ ไม่ผ่านโดย ":" · ✔ ตรวจโดย ")+escapeHtml(L.reviewBy):""}${rej?" · <b style=\"color:var(--red)\">งานไม่ผ่าน — % ไม่ถูกนับ</b>":""}</div></div>
       <div class="lg-num">${L.labor??"—"}</div><div class="lg-num"><b>${(+L.prog||0)}%</b></div>
-      <div class="lg-st">${pend?`<button class="lg-btn pend" data-review="${L.id}">⏳ รอตรวจสอบ</button>`:`<span class="lg-btn appr">✓ ตรวจแล้ว</span>`}</div>
+      <div class="lg-st">${pend?`<button class="lg-btn pend" data-review="${L.id}">⏳ รอตรวจสอบ</button>`:(rej?`<span class="lg-btn rej">✗ งานไม่ผ่าน</span>`:`<span class="lg-btn appr">✓ ตรวจแล้ว</span>`)}</div>
     </div>`;}).join("");
   el.querySelectorAll('[data-review]').forEach(b=>b.addEventListener('click',()=>openReview(b.dataset.review))); // เปิดหน้าตรวจได้เลย ไม่ต้อง PIN
 }
@@ -138,13 +138,14 @@ function fmtTaskDate(L){return L.date||"—";}
 /* ===== PIN 4 หลัก — ใช้ตอน "กดอนุมัติ" เท่านั้น (เปิดดู/แก้ค่าได้โดยไม่ต้อง PIN แต่กดตรวจแล้วไม่ได้ถ้าไม่มี PIN) ===== */
 const REVIEW_PIN="5555";let pinTarget=null; // string = id ของ log ที่จะอนุมัติ · object {mode:"save",who,mid} = ยืนยันตัวผู้บันทึกก่อนบันทึก
 function askPin(target){pinTarget=target;const bx=$("pinBox");if(bx)bx.value="";const er=$("pinErr");if(er)er.textContent="";
-  const tt=$("pinTitle");if(tt)tt.textContent=(target&&target.mode==="save")?("🔒 "+target.who+" — ใส่ PIN ประจำตัว 4 หลัก เพื่อยืนยันการบันทึก"):"🔒 ใส่ PIN 4 หลัก เพื่อยืนยันการอนุมัติ (ตรวจแล้ว)";
+  const tt=$("pinTitle");if(tt)tt.textContent=(target&&target.mode==="save")?("🔒 "+target.who+" — ใส่ PIN ประจำตัว 4 หลัก เพื่อยืนยันการบันทึก"):(target&&target.mode==="reject")?"🔒 ใส่ PIN ผู้ตรวจ 4 หลัก เพื่อยืนยัน “งานไม่ผ่าน”":"🔒 ใส่ PIN 4 หลัก เพื่อยืนยันการอนุมัติ (ตรวจแล้ว)";
   $("pinScrim").classList.add("on");$("pinModal").classList.add("on");setTimeout(()=>bx&&bx.focus(),60);}
 function closePin(){$("pinScrim").classList.remove("on");$("pinModal").classList.remove("on");pinTarget=null;}
 function submitPin(){const v=($("pinBox").value||"").trim();const tg=pinTarget;
   if(tg&&tg.mode==="save"){const rec=recorderByName(tg.who);
     if(rec&&v===rec.pin){closePin();if(curMid===tg.mid&&$("drawer").classList.contains("on"))commitDrafts(rec.name);return;}
     $("pinErr").textContent="PIN ของ "+tg.who+" ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();return;}
+  if(tg&&tg.mode==="reject"){if(v===REVIEW_PIN){closePin();if(reviewId===tg.id)rejectReview();return;}$("pinErr").textContent="PIN ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();return;}
   if(v===REVIEW_PIN){closePin();if(reviewId===tg)approveReview();}else{$("pinErr").textContent="PIN ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();}}
 /* ===== Review / อนุมัติ ===== */
 let reviewId=null;
@@ -161,12 +162,18 @@ function approveReview(){const L=(DATA.logs||[]).find(x=>x.id===reviewId);if(!L)
   L.prog=prog;L.labor=labor;L.note=note;L.status="approved";L.reviewTs=Date.now();L.reviewBy="ผู้ตรวจ";
   scheduleSave();closeReview();renderLog();renderDiagram();
   setTimeout(()=>notify("ตรวจสอบสำเร็จ","อัปเดตความคืบหน้าบนหมุด/Dashboard เรียบร้อย"),120);}
+/* ไม่ผ่าน: log คงค่าที่บันทึกไว้แต่สถานะ rejected → ไม่ถูกนำไปคิด % (applyApprovedLogs นับเฉพาะ approved) · ผู้บันทึกส่งใหม่ได้ (pendingFor หาเฉพาะ pending) */
+function rejectReview(){const L=(DATA.logs||[]).find(x=>x.id===reviewId);if(!L)return;
+  L.status="rejected";L.reviewTs=Date.now();L.reviewBy="ผู้ตรวจ";
+  scheduleSave();closeReview();renderLog();renderDiagram();
+  setTimeout(()=>notify("บันทึกว่า “งานไม่ผ่าน” แล้ว","รายการนี้จะไม่ถูกนับเป็น % ความคืบหน้า · ผู้บันทึกสามารถบันทึกงานนี้ใหม่ได้","err"),120);}
 function wireReview(){
   const bind=(id,fn)=>{const e=$(id);if(e)e.addEventListener("click",fn);};
   bind("pinOk",submitPin);bind("pinCancel",closePin);const pb=$("pinScrim");if(pb)pb.addEventListener("click",closePin);
   const bx=$("pinBox");if(bx)bx.addEventListener("keydown",e=>{if(e.key==="Enter")submitPin();});
   bind("rvClose",closeReview);bind("rvCancel",closeReview);const rs=$("rvScrim");if(rs)rs.addEventListener("click",closeReview);
   bind("rvApprove",()=>{if(reviewId)askPin(reviewId);}); // กดอนุมัติ → ต้องใส่ PIN ก่อน ถึงจะ approveReview()
+  bind("rvReject",()=>{if(reviewId)askPin({mode:"reject",id:reviewId});}); // กดไม่ผ่าน → PIN ผู้ตรวจ → rejectReview()
   const rp=$("rvProg");if(rp)rp.addEventListener("input",()=>$("rvProgV").textContent=(Math.round(+rp.value||0))+"%");
   bind("rvPminus",()=>{rp.value=Math.max(0,(+rp.value||0)-1);rp.dispatchEvent(new Event('input'));});
   bind("rvPplus",()=>{rp.value=Math.min(100,(+rp.value||0)+1);rp.dispatchEvent(new Event('input'));});
