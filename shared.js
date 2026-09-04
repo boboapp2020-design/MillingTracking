@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=43; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=44; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -178,6 +178,8 @@ async function pushRemote(){if(!syncUrl)return;
       }catch(e){}                                               // ดึงมารวมก่อน (ถ้าดึงไม่ได้ก็ยังส่งของเราไป)
     }
     DATA.updated=Date.now();
+    // ส่ง % รวมสะสมที่เว็บคำนวณไปด้วย → ชีท "Summary" เอาไปเทียบกับค่าที่ชีทคำนวณเองด้วยสูตรในชีท
+    try{DATA.summary={overall:+actualPct().toFixed(3),ver:APP_VER,asOf:thaiDMY()+" "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"})};}catch(e){}
     const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})});
     const j=await res.json();
     if(j&&j.ok){lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
@@ -293,10 +295,20 @@ function renderRace(){const t=$("truck");if(!t)return;
 
 /* ---- lock ratio: ย่อทั้งหน้าให้พอดีจอ คงสัดส่วนเดสก์ท็อปทุกอุปกรณ์ ---- */
 const DESIGN_W=1340, MAX_SCALE=1.7;
-function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;
-  let s=Math.min(MAX_SCALE, vw/DESIGN_W); // fit ตามความกว้าง · ใช้ zoom (สเกล layout จริง) เลื่อนขึ้น-ลงได้ปกติ
+/* 2 เวอร์ชันในลิงก์เดียว: จอ ≤768px = เวอร์ชันมือถือ (layout เรียงลง ไม่ย่อทั้งหน้า) · จอใหญ่ = เวอร์ชันคอม (ย่อ/ขยายทั้งหน้าให้พอดี 1340px) */
+const MOBILE_BP=768, HERO_W=1300;
+function isMobile(){return document.documentElement.clientWidth<=MOBILE_BP;}
+function fitPage(){const app=$("app");if(!app)return;const vw=document.documentElement.clientWidth;const mob=isMobile();
+  document.documentElement.classList.toggle("mobile",mob);
   app.style.transform="none";app.style.marginLeft="";
-  app.style.zoom=s.toFixed(4);
+  const hf=$("heroFrame");
+  if(mob){
+    app.style.zoom="1";                                             // มือถือ: ไม่ย่อทั้งหน้า ให้ CSS จัดเรียงเอง
+    if(hf){const avail=Math.max(760,vw-24);hf.style.width=HERO_W+"px";hf.style.zoom=(avail/HERO_W).toFixed(4);} // แผนผัง+หมุด ย่อเป็นภาพเดียว เลื่อนซ้าย-ขวาได้
+  }else{
+    app.style.zoom=Math.min(MAX_SCALE, vw/DESIGN_W).toFixed(4);     // คอม: fit ตามความกว้าง (zoom = สเกล layout จริง)
+    if(hf){hf.style.width="";hf.style.zoom="";}
+  }
   const w=$("appWrap");if(w)w.style.height="";}
 function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout(window._fit);window._fit=setTimeout(fitPage,60);});window.addEventListener("load",fitPage);
   try{new ResizeObserver(()=>fitPage()).observe($("app"));}catch(e){}}

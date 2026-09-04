@@ -121,16 +121,22 @@ function writeTable_(data) {
   var sh = ss.getSheetByName(TABLE_SHEET);
   if (!sh) { sh = ss.insertSheet(TABLE_SHEET); }
   sh.clear();
+  // คอลัมน์ L–N เป็น "สูตรในชีท" (ไม่ใช่ค่าที่เว็บส่งมา) → ชีทคำนวณ % รวมสะสมเองอิสระจากเว็บ เอาไว้ชนกัน
   var head = ['กลุ่ม', 'เครื่องจักร', 'ผู้รับผิดชอบ', 'งาน (Task)', 'จำนวนวัน', 'แรงงาน(คน)',
-              'เริ่ม', 'แล้วเสร็จ', 'น้ำหนัก(man-day)', '% คืบหน้า', 'หมายเหตุ'];
+              'เริ่ม', 'แล้วเสร็จ', 'น้ำหนัก(man-day)', '% คืบหน้า', 'หมายเหตุ',
+              'man-hour (คน×วัน×8)', 'ทำแล้ว (man-hr)', 'นับรวม (1=ใช่)'];
   var rows = [head];
   (data.groups || []).forEach(function (g) {
     (g.machines || []).forEach(function (m) {
       (m.tasks || []).forEach(function (t) {
         var md = (t.days > 0 && t.labor > 0) ? t.days * t.labor : '';
+        var r = rows.length + 1;                                   // แถวจริงในชีท
         rows.push([g.name, m.name, m.owner || '', t.name, t.days == null ? '' : t.days,
                    t.labor == null ? '' : t.labor, serial_(t.start), serial_(t.finish),
-                   md, (t.prog || 0) / 100, t.note || '']);
+                   md, (t.prog || 0) / 100, t.note || '',
+                   '=IF(AND(E' + r + '>0,F' + r + '>0),E' + r + '*F' + r + '*8,"")',   // man-hour
+                   '=IF(L' + r + '="","",L' + r + '*J' + r + ')',                       // ทำแล้ว
+                   (m.id === 'pdump' ? 0 : 1)]);                                        // drump+ตะกาว ไม่นับใน 100%
       });
     });
   });
@@ -142,6 +148,32 @@ function writeTable_(data) {
   var stamp = ss.getSheetByName(TABLE_SHEET);
   stamp.getRange(rows.length + 2, 1).setValue('อัปเดตล่าสุด: ' +
     Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'));
+  writeSummary_(data, rows.length);
+}
+
+/* ชีท "Summary": % รวมสะสม ที่ "ชีทคำนวณเอง" จากคอลัมน์สูตรใน ชีต1 + ค่าที่เว็บส่งมา → ดูเทียบกันได้ทันที */
+function writeSummary_(data, lastRow) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Summary');
+  if (!sh) { sh = ss.insertSheet('Summary'); }
+  sh.clear();
+  var T = "'" + TABLE_SHEET + "'!";
+  var s = (data && data.summary) || {};
+  var rows = [
+    ['รายการ', 'ค่า', 'ที่มา'],
+    ['Σ man-hour ทั้งโปรเจกต์ (10 งาน)', '=SUMIF(' + T + 'N2:N' + lastRow + ',1,' + T + 'L2:L' + lastRow + ')', 'สูตรในชีท: Σ คน×วัน×8 (ไม่รวม drump+ตะกาว)'],
+    ['Σ man-hour ที่ทำแล้ว',          '=SUMIF(' + T + 'N2:N' + lastRow + ',1,' + T + 'M2:M' + lastRow + ')', 'สูตรในชีท: Σ man-hour × % คืบหน้า'],
+    ['% รวมสะสม (ชีทคำนวณเอง)',       '=IF(B2>0,B3/B2,0)', 'B3 ÷ B2'],
+    ['% รวมสะสม (เว็บส่งมา)',          (s.overall == null ? '' : s.overall / 100), 'จากแอป ' + (s.ver ? 'v' + s.ver : '') + ' ณ ' + (s.asOf || '')],
+    ['ผลต่าง (ชีท − เว็บ)',            '=IF(B5="","",B4-B5)', 'ควรเป็น 0.00%'],
+    ['อัปเดตล่าสุด', Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'), 'เวลาชีท (' + Session.getScriptTimeZone() + ')']
+  ];
+  sh.getRange(1, 1, rows.length, 3).setValues(rows);
+  sh.getRange(1, 1, 1, 3).setFontWeight('bold').setBackground('#12a150').setFontColor('#ffffff');
+  sh.getRange(4, 2, 3, 1).setNumberFormat('0.000%');
+  sh.getRange(2, 2, 2, 1).setNumberFormat('#,##0.0');
+  sh.getRange(4, 1, 1, 3).setFontWeight('bold').setBackground('#e8f5ee');
+  try { sh.autoResizeColumns(1, 3); } catch (e) {}
 }
 
 /* ประวัติการบันทึกรายวัน — เขียน log ทั้งหมดเป็นแถว (เก็บได้เรื่อยๆ ทุกวัน) */

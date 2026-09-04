@@ -32,7 +32,7 @@ function openDrawer(mid){if(editPins)return;curMid=mid;const m=machineById(mid);
   $("dTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');$("dSub").textContent=g.name+" · "+m.tasks.length+" งาน";
   const ow=$("dOwner");ow.value=m.owner||"";ow.classList.remove("req-err");ow.oninput=()=>{m.owner=ow.value;ow.classList.remove("req-err");scheduleSave();};
   renderTasks();$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
-function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;renderDiagram();}
+function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;renderDiagram();renderMachineList();}
 function dmy(serial){const s=isoOf(serial);if(!s)return "—";const p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
 function wtCell(t,m,total){if(manhour(t)===0)return '<span style="color:var(--amber)">—</span><br><span style="opacity:.55;font-size:10px">ยังไม่ระบุ</span>';
   return `<b>${taskWeightInJob(t,m).toFixed(1)}%</b><br><span style="opacity:.6;font-size:10px">รวม ${taskWeight(t,total).toFixed(2)}% · ${manhour(t)}h</span>`;}
@@ -156,7 +156,13 @@ function wireReview(){
 }
 wireReview();
 
-function render(){renderRace();renderDiagram();renderLog();}
+/* รายการเครื่องแบบแตะ — เวอร์ชันมือถือ (CSS ซ่อนบนคอม) */
+function renderMachineList(){const el=$("machineList");if(!el)return;
+  const items=[];DATA.groups.forEach(g=>g.machines.forEach(m=>{const a=machineActual(m);const st=machineStatus(m);const p=Math.round(a.localPct);
+    items.push(`<div class="mitem st-${st}" data-mid="${m.id}"><div class="mring" style="--p:${p}"><span>${p}%</span></div><div><div class="mname">${escapeHtml(m.name)}</div><div class="mst">${STLABEL[st]} · ${m.tasks.length} งาน</div></div></div>`);}));
+  el.innerHTML=items.join("");
+  el.querySelectorAll(".mitem").forEach(x=>x.addEventListener("click",()=>openDrawer(x.dataset.mid)));}
+function render(){renderRace();renderDiagram();renderMachineList();renderLog();}
 function onThemeChange(){renderDiagram();}
 function onSyncConnected(){renderDiagram();renderLog();}
 boot();
