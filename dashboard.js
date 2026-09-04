@@ -136,19 +136,27 @@ function renderForecast(){const el=$("forecast");if(!el)return;const rng=project
   let cls,verdict,sub,projDate;
   if(act>=99.95){cls="ok";verdict="งานซ่อมเสร็จครบ 100% แล้ว";sub="ปิดงานเรียบร้อยตามเป้าหมาย";projDate=fmtTH(base);}
   else if(act<=0.1||elapsed<=0){cls="wait";verdict="ยังไม่เริ่มงาน / ยังไม่มีข้อมูล";sub="เริ่มบันทึก % ความคืบหน้าเพื่อคาดการณ์วันเสร็จ";projDate="—";}
-  else if(elapsed<minElapsed||act<10){ // ช่วงเริ่มต้น/ข้อมูลน้อย: ตัดสินจากระยะห่างจากเป้า ยังไม่ฟันธงวันเสร็จ
-    cls=gapCls;
-    verdict=cls==="ok"?"เริ่มต้นได้ตามแผน":(cls==="warn"?`ช้ากว่าแผนเล็กน้อย (ห่าง ${Math.abs(gap).toFixed(1)}%)`:`ตอนนี้ช้ากว่าแผน (ห่าง ${Math.abs(gap).toFixed(1)}%)`);
-    sub=`ผ่านไป ${elapsed}/${totalWork} วันทำงาน · ทำได้ ${act.toFixed(1)}% (แผน ${plan.toFixed(1)}%) · SPI ${spi.toFixed(2)} — ต้องทำเฉลี่ย ${reqRate.toFixed(2)}%/วันจึงจะทันกำหนด`;projDate="—";}
-  else{const rate=act/elapsed,remain=100-act,need=remain/rate,projSerial=addWork(base,need);
-    const capW=totalWork*2; const capped=(workingSerials(base,projSerial).length>capW);
+  else{
+    /* วันที่คาดว่าเสร็จ (วิธี EVM, ใช้สูตรเดียวตลอดโครงการ ไม่สลับกลางทาง):
+         คาดว่าเสร็จ = วันนี้ + (วันทำงานที่เหลือตามแผน ÷ SPI) · SPI = จริง ÷ แผน
+       เหตุผล: แผนเป็น S-curve ช่วงแรกช้าโดยธรรมชาติ — ถ้าลากเส้นตรงจากความเร็วเฉลี่ยจะได้วันเสร็จเลยเถิดทั้งที่ยังตามแผน
+       SPI ≥ 1 → เสร็จก่อน/ทันกำหนด · SPI < 1 → เลยกำหนด (สอดคล้องกับสีลูกบอลเสมอ) */
+    const rate=act/Math.max(1,elapsed);
+    const needW=spi>0?remainPlanWork/spi:Infinity;
+    const capW=totalWork*2; const capped=!isFinite(needW)||needW>capW;
+    const projSerial=capped?null:addWork(base,needW);
     projDate=capped?("หลัง "+fmtTH(s1)):fmtTH(projSerial);
-    if(projSerial<=s1){cls="ok";const ahead=Math.max(0,workingSerials(projSerial,s1).length-1);
-      verdict="คาดว่าเสร็จทันกำหนด";sub=(ahead>0?`เร็วกว่ากำหนด ~${ahead} วันทำงาน · `:`พอดีกำหนด · `)+`ความเร็วเฉลี่ย ${rate.toFixed(2)}%/วันทำงาน`;}
-    else{const lateW=Math.max(1,workingSerials(s1,projSerial).length-1);
-      if(lateW<=3){cls="warn";verdict=`เสี่ยงเลยกำหนด ~${lateW} วันทำงาน — ต้องเร่ง`;}
-      else{cls="late";verdict=capped?"คาดว่าล่าช้ากว่าแผนมาก หากคงอัตราปัจจุบัน":`คาดว่าล่าช้ากว่าแผน ~${lateW} วันทำงาน`;}
-      sub=`ต้องเร่งความเร็วเป็น ${reqRate.toFixed(2)}%/วัน (ปัจจุบัน ${rate.toFixed(2)}%/วัน)`;}}
+    const early=(elapsed<minElapsed||act<10);            // ข้อมูลยังน้อย → บอกความเชื่อมั่นต่ำไว้ในข้อความ
+    const conf=early?` · ประเมินจากข้อมูล ${elapsed}/${totalWork} วัน (ความแม่นยำจะดีขึ้นเมื่อผ่านไปมากกว่านี้)`:"";
+    if(!capped&&projSerial<=s1){cls=early?gapCls:"ok";const ahead=Math.max(0,workingSerials(projSerial,s1).length-1);
+      verdict=early?(cls==="ok"?"เริ่มต้นได้ตามแผน":(cls==="warn"?`ช้ากว่าแผนเล็กน้อย (ห่าง ${Math.abs(gap).toFixed(1)}%)`:`ตอนนี้ช้ากว่าแผน (ห่าง ${Math.abs(gap).toFixed(1)}%)`)):"คาดว่าเสร็จทันกำหนด";
+      sub=(ahead>0?`คาดว่าเร็วกว่ากำหนด ~${ahead} วันทำงาน · `:`คาดว่าพอดีกำหนด · `)+`ทำได้ ${act.toFixed(1)}% (แผน ${plan.toFixed(1)}%) · SPI ${spi.toFixed(2)} · ความเร็วเฉลี่ย ${rate.toFixed(2)}%/วัน`+conf;}
+    else{const lateW=capped?999:Math.max(1,workingSerials(s1,projSerial).length-1);
+      if(!capped&&lateW<=3){cls="warn";verdict=`เสี่ยงเลยกำหนด ~${lateW} วันทำงาน — ต้องเร่ง`;}
+      else{cls="late";verdict=capped?"คาดว่าล่าช้ากว่าแผนมาก หากคง SPI ปัจจุบัน":`คาดว่าล่าช้ากว่าแผน ~${lateW} วันทำงาน`;}
+      sub=`ทำได้ ${act.toFixed(1)}% (แผน ${plan.toFixed(1)}%) · SPI ${spi.toFixed(2)} · ต้องเร่งเป็น ${reqRate.toFixed(2)}%/วัน (ปัจจุบัน ${rate.toFixed(2)}%/วัน)`+conf;}}
+  // สีแถบ+ลูกบอลใช้เกณฑ์เดียว = ระยะห่างจากเป้า (กันลูกบอลส้มแต่ขอบแดง) · ข้อความ verdict ยังบอกวันที่คาดว่าล่าช้าตาม SPI
+  if(cls!=="wait"&&act<99.95)cls=gapCls;
   // ลูกบอล: สีตามระยะห่างจากเป้าเสมอ (ไม่ใช้ emoji — บางเครื่องไม่มีฟอนต์ ขึ้นเป็นกล่องสี่เหลี่ยม)
   const ballCls=cls==="wait"?"grey":(act>=99.95?"ok":gapCls);
   const gapTxt=cls==="wait"?"—":(gap>=0?"+":"−")+Math.abs(gap).toFixed(1)+"%";
