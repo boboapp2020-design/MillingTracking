@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=42; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=43; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -162,7 +162,8 @@ const SYNC_URL="https://script.google.com/macros/s/AKfycbwz5JC3AsGW4SRS-suhTRwFi
 const SYNC_KEY="mlk_7Qx2F9pR4vT8nZ6bW3sK";   // ต้องตรงกับ SECRET ใน Code.gs
 let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;let lastPullAt=0;
 function syncGet(extra){return syncUrl+"?key="+encodeURIComponent(SYNC_KEY)+(extra?"&"+extra:"")+"&t="+Date.now();}
-function setSyncBtn(state,msg){const b=$("btnSync");if(!b)return;const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
+function setSyncBtn(state,msg){const b=$("btnSync");if(b){const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
+  const v=$("verTag");if(v){const t=lastSync?lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"}):null;v.textContent="v"+APP_VER+(t?" · ซิงค์ "+t:(state==="offline"?" · ออฟไลน์":" · ยังไม่ซิงค์"));v.style.color=(state==="err"||state==="offline")?"var(--red)":"";}} // ป้ายเวอร์ชัน+เวลาซิงค์ ให้เห็นทันทีว่าเครื่องนี้ตรงกับเครื่องอื่นไหม
 function persistLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}}
 function schedulePush(){if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1200);}
 /* push แบบ read-modify-write: ดึงของล่าสุดมารวมก่อนส่ง → ไม่ทับงานเครื่องอื่น (กันข้อมูลเปลี่ยนไปเปลี่ยนมา) */

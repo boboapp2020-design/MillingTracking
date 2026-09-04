@@ -5,7 +5,7 @@
    - version.json และ URL ที่มี ?t= / ?u=  → ไม่เก็บ cache (กันสะสม entry ไม่รู้จบ)
    - cross-origin (Google Sheet sync / Google Fonts) → ปล่อยผ่าน network ปกติ
    - เทียบ cache แบบ ignoreSearch → ?v=N / ?u=ts ไม่ทำให้พลาด cache ตอนออฟไลน์ */
-const VER = 'v42';
+const VER = 'v43';
 const CACHE = 'milling-' + VER;
 const SHELL = [
   './', 'index.html', 'dashboard.html',
@@ -33,7 +33,14 @@ self.addEventListener('install', function (e) {
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
     return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
-  }).then(function () { return self.clients.claim(); }));
+  }).then(function () { return self.clients.claim(); }).then(function () {
+    // เวอร์ชันใหม่ activate ครั้งเดียว → รีโหลดทุกแท็บที่เปิดค้างอยู่ให้มาใช้โค้ดใหม่ (ครอบคลุมเครื่องที่ยังรันโค้ดเก่า ไม่ต้องให้ใครกด F5)
+    return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
+      return Promise.all(cs.map(function (c) {
+        return ('navigate' in c) ? c.navigate(c.url).catch(function () {}) : Promise.resolve();
+      }));
+    });
+  }));
 });
 
 self.addEventListener('fetch', function (e) {
