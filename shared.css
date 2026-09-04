@@ -356,7 +356,7 @@ footer{max-width:1340px;margin:0 auto;padding:14px 20px 34px;color:var(--ink3);f
   background-image:linear-gradient(45deg,#12161c 25%,transparent 0),linear-gradient(-45deg,#12161c 25%,transparent 0),linear-gradient(45deg,transparent 75%,#12161c 0),linear-gradient(-45deg,transparent 75%,#12161c 0);
   background-size:13px 13px;background-position:0 0,0 6.5px,6.5px -6.5px,-6.5px 0}
 .race2 .rflag{position:absolute;right:12px;top:6px;z-index:5;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
-.truck2{position:absolute;left:5%;bottom:50px;width:7%;min-width:66px;max-width:118px;z-index:4;transform:translateX(-50%);transform-origin:bottom center;transition:left 1.2s cubic-bezier(.22,.61,.36,1);pointer-events:none}
+.truck2{position:absolute;left:5%;bottom:50px;width:14%;min-width:132px;max-width:236px;z-index:4;transform:translateX(-50%);transform-origin:bottom center;transition:left 1.2s cubic-bezier(.22,.61,.36,1);pointer-events:none}
 .truck2 .truckimg{display:block;width:100%;height:auto;filter:drop-shadow(0 5px 5px rgba(10,16,24,.5));-webkit-user-drag:none}
 .race2 .tkpct{position:absolute;left:6%;bottom:6px;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:700;color:#fff;background:linear-gradient(180deg,#f2564a,#d3342a);border:1px solid #b52a20;border-radius:11px;padding:3px 16px;letter-spacing:.5px;white-space:nowrap;box-shadow:0 5px 12px rgba(190,40,32,.4),inset 0 1px 0 rgba(255,255,255,.25);transition:left 1.2s cubic-bezier(.22,.61,.36,1),background .4s,border-color .4s,box-shadow .4s}
 /* ได้ตามเป้า/เกิน → เขียว */
