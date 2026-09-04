@@ -119,14 +119,14 @@ function renderLog(){const el=$("logList");if(!el)return;let logs=(DATA.logs||[]
       <div class="lg-num">${L.labor??"—"}</div><div class="lg-num"><b>${(+L.prog||0)}%</b></div>
       <div class="lg-st">${pend?`<button class="lg-btn pend" data-review="${L.id}">⏳ รอตรวจสอบ</button>`:`<span class="lg-btn appr">✓ ตรวจแล้ว</span>`}</div>
     </div>`;}).join("");
-  el.querySelectorAll('[data-review]').forEach(b=>b.addEventListener('click',()=>askPin(b.dataset.review)));
+  el.querySelectorAll('[data-review]').forEach(b=>b.addEventListener('click',()=>openReview(b.dataset.review))); // เปิดหน้าตรวจได้เลย ไม่ต้อง PIN
 }
 function fmtTaskDate(L){return L.date||"—";}
-/* ===== PIN 4 หลัก ===== */
+/* ===== PIN 4 หลัก — ใช้ตอน "กดอนุมัติ" เท่านั้น (เปิดดู/แก้ค่าได้โดยไม่ต้อง PIN แต่กดตรวจแล้วไม่ได้ถ้าไม่มี PIN) ===== */
 const REVIEW_PIN="5555";let pinTarget=null;
 function askPin(id){pinTarget=id;const bx=$("pinBox");if(bx)bx.value="";const er=$("pinErr");if(er)er.textContent="";$("pinScrim").classList.add("on");$("pinModal").classList.add("on");setTimeout(()=>bx&&bx.focus(),60);}
 function closePin(){$("pinScrim").classList.remove("on");$("pinModal").classList.remove("on");pinTarget=null;}
-function submitPin(){const v=($("pinBox").value||"").trim();if(v===REVIEW_PIN){const id=pinTarget;closePin();openReview(id);}else{$("pinErr").textContent="PIN ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();}}
+function submitPin(){const v=($("pinBox").value||"").trim();if(v===REVIEW_PIN){const id=pinTarget;closePin();if(reviewId===id)approveReview();}else{$("pinErr").textContent="PIN ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();}}
 /* ===== Review / อนุมัติ ===== */
 let reviewId=null;
 function openReview(id){const L=(DATA.logs||[]).find(x=>x.id===id);if(!L)return;reviewId=id;
@@ -147,7 +147,7 @@ function wireReview(){
   bind("pinOk",submitPin);bind("pinCancel",closePin);const pb=$("pinScrim");if(pb)pb.addEventListener("click",closePin);
   const bx=$("pinBox");if(bx)bx.addEventListener("keydown",e=>{if(e.key==="Enter")submitPin();});
   bind("rvClose",closeReview);bind("rvCancel",closeReview);const rs=$("rvScrim");if(rs)rs.addEventListener("click",closeReview);
-  bind("rvApprove",approveReview);
+  bind("rvApprove",()=>{if(reviewId)askPin(reviewId);}); // กดอนุมัติ → ต้องใส่ PIN ก่อน ถึงจะ approveReview()
   const rp=$("rvProg");if(rp)rp.addEventListener("input",()=>$("rvProgV").textContent=(Math.round(+rp.value||0))+"%");
   bind("rvPminus",()=>{rp.value=Math.max(0,(+rp.value||0)-1);rp.dispatchEvent(new Event('input'));});
   bind("rvPplus",()=>{rp.value=Math.min(100,(+rp.value||0)+1);rp.dispatchEvent(new Event('input'));});
