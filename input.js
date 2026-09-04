@@ -84,7 +84,7 @@ function renderTasks(){const m=machineById(curMid);
     card.querySelectorAll('[data-stp]').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;}));
   });}
 /* ===== ผู้บันทึก: เลือกจากรายชื่อ + ยืนยัน PIN ประจำตัวก่อนบันทึกทุกครั้ง ===== */
-const RECORDERS=[{name:"ท้าวกอ",pin:"1111"},{name:"ท้าวสีมอน",pin:"2222"},{name:"สะหว่าง ไชโลวง",pin:"3333"},{name:"กองคำ พมหลวงจี",pin:"4444"}];
+const RECORDERS=[{name:"ท้าวกอ",pin:"1111"},{name:"ท้าวสีมอน",pin:"2222"},{name:"สะหว่าง ไชโลวง",pin:"3333"},{name:"กองคำ พมหลวงจี",pin:"4444"},{name:"สุกสะหวัน",pin:"6666"},{name:"พูนสีน",pin:"7777"},{name:"สีพะจัน",pin:"8888"}];
 function recorderByName(n){n=(n||"").trim();return RECORDERS.find(r=>r.name===n)||null;}
 function fillRecorders(sel){if(!sel||sel.dataset.filled)return;RECORDERS.forEach(r=>{const o=document.createElement("option");o.value=r.name;o.textContent=r.name;sel.appendChild(o);});sel.dataset.filled="1";}
 function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}
