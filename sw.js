@@ -5,7 +5,7 @@
    - version.json และ URL ที่มี ?t= / ?u=  → ไม่เก็บ cache (กันสะสม entry ไม่รู้จบ)
    - cross-origin (Google Sheet sync / Google Fonts) → ปล่อยผ่าน network ปกติ
    - เทียบ cache แบบ ignoreSearch → ?v=N / ?u=ts ไม่ทำให้พลาด cache ตอนออฟไลน์ */
-const VER = 'v40';
+const VER = 'v41';
 const CACHE = 'milling-' + VER;
 const SHELL = [
   './', 'index.html', 'dashboard.html',
@@ -57,12 +57,16 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  // HTML/JS/CSS/json: network-first + revalidate. navigation ใช้ URL string (Request mode:navigate + init ทำบางเบราว์เซอร์เก่า throw)
+  // HTML/JS/CSS/json: network-first + revalidate.
+  // navigation: ใช้ URL string (Request mode:navigate + init ทำบางเบราว์เซอร์เก่า throw) และ redirect:'manual'
+  //   → โฮสต์ที่ redirect /index.html→/ (เช่น Cloudflare 307) จะได้ opaqueredirect ส่งต่อให้เบราว์เซอร์ตามเอง
+  //   (ถ้าใช้ follow แล้ว respondWith response ที่ redirected=true ให้ navigation เบราว์เซอร์จะ NetworkError หน้าไม่โหลด)
   var net = isNav
-    ? fetch(url.href, { cache: 'no-cache', credentials: 'same-origin' })
+    ? fetch(url.href, { cache: 'no-cache', credentials: 'same-origin', redirect: 'manual' })
     : fetch(req, { cache: 'no-cache' });
 
   e.respondWith(net.then(function (res) {
+    if (res && res.type === 'opaqueredirect') return res;            // ปล่อย redirect ผ่าน ไม่ cache
     if (res && res.status === 200 && !isVolatile(url)) {
       var copy = res.clone();
       caches.open(CACHE).then(function (c) { c.put(isNav ? url.pathname : req, copy); }).catch(function () {}); // เก็บ HTML ด้วย pathname (ไม่ติด ?u=)
