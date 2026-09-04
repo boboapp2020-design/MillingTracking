@@ -7,7 +7,7 @@ function fmtG(s){if(s==null)return"—";const d=sd(s);return String(d.getDate())
 function renderPeriodBar(){const asof=new Date().toLocaleString("th-TH",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
   let mn=null,mx=null;DATA.groups.forEach(g=>g.machines.forEach(m=>{if(isExcluded(m))return;m.tasks.forEach(t=>{if(t.start!=null)mn=mn==null?t.start:Math.min(mn,t.start);if(t.finish!=null)mx=mx==null?t.finish:Math.max(mx,t.finish);});})); // ไม่รวม drump+ตะกาว
   if(mn==null)mn=46266;if(mx==null)mx=46330;
-  $("periodBar").innerHTML=`<span class="chip">ช่วงแผนงาน <b>${fmtTH(mn)} – ${fmtTH(mx)}</b></span><span class="chip">ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก man-hour (คน×ชม.จริง 8/9) · 10 Jobs = 100%</span>`;}
+  $("periodBar").innerHTML=`<span class="chip">ช่วงแผนงาน <b>${fmtTH(mn)} – ${fmtTH(mx)}</b></span><span class="chip">ข้อมูล ณ <b>${asof} น.</b></span><span class="grow"></span><span class="chip">น้ำหนัก man-hour (คน × วัน × 8 ชม.) · 10 Jobs = 100%</span>`;}
 
 function renderKPI(){const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),diff=act-plan;const rng=projectRange();const spi=plan>0?act/plan:1;
   // ค่าวันนี้ = เทียบกับ snapshot ล่าสุดก่อนวันนี้ (ถ้ามี) มิฉะนั้นเทียบจากต้นโครงการ
@@ -108,10 +108,12 @@ function openDetail(mid){const m=machineById(mid);if(!m)return;const g=groupOf(m
   $("dtScrim").classList.add("on");$("detail").classList.add("on");}
 function closeDetail(){$("dtScrim").classList.remove("on");$("detail").classList.remove("on");}
 
-function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=new Set([46276,46321]);const thMon=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];const dh=["จ","อ","พ","พฤ","ศ","ส","อา"];
+function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=HOLIDAYS; // แหล่งเดียวกับสูตรคำนวณ (shared.js)
+  const holTxt=[...HOLIDAYS].sort((a,b)=>a-b).map(s=>fmtTH(s).slice(0,5)).join(" และ ");const ls=$("legSpecial");if(ls)ls.textContent="หยุดพิเศษ "+holTxt;const fh=$("footHol");if(fh)fh.textContent=holTxt.replace(" และ ",", ");
+  const thMon=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];const dh=["จ","อ","พ","พฤ","ศ","ส","อา"];
   const P=n=>String(n).padStart(2,"0");const recByDate={};(DATA.logs||[]).forEach(L=>{if(L.date)recByDate[L.date]=(recByDate[L.date]||0)+1;});
   $("calMonths").innerHTML=months.map(([yy,mm])=>{const first=new Date(yy,mm,1);const start=(first.getDay()+6)%7;const dim=new Date(yy,mm+1,0).getDate();let cells="";for(let i=0;i<start;i++)cells+=`<div class="cald dim"></div>`;
-    for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const nine=!off&&dt.getDay()>=1&&dt.getDay()<=5&&weekSatOff(dt);const cls=["cald","clk"];if(off)cls.push("off");else if(nine)cls.push("h9");if(MS.has(ser))cls.push("ms");const dstr=P(d)+"/"+P(mm+1)+"/"+yy;const rec=recByDate[dstr]||0;if(rec)cls.push("hasrec");const mk=off?(dt.getDay()===0?"หยุด":"หยุด ส."):(nine?"9 ชม.":"");cells+=`<div class="${cls.join(" ")}" data-date="${dstr}"><div class="dn">${d}</div><div class="mk">${mk}</div>${rec?`<div class="calrec">${rec}</div>`:""}</div>`;}
+    for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const special=MS.has(ser);const cls=["cald","clk"];if(off)cls.push("off");if(special)cls.push("ms");const dstr=P(d)+"/"+P(mm+1)+"/"+yy;const rec=recByDate[dstr]||0;if(rec)cls.push("hasrec");const mk=off?(special?"หยุดพิเศษ":"หยุด"):"";cells+=`<div class="${cls.join(" ")}" data-date="${dstr}"><div class="dn">${d}</div><div class="mk">${mk}</div>${rec?`<div class="calrec">${rec}</div>`:""}</div>`;}
     return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");
   $("calMonths").querySelectorAll("[data-date]").forEach(el=>el.addEventListener("click",()=>openDayView(el.dataset.date)));}
 /* คลิกวันในปฏิทิน → ดูงานที่บันทึกวันนั้น */

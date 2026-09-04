@@ -1,27 +1,38 @@
 /* Service Worker — ระบบติดตามงานซ่อมลูกหีบ (PWA) */
-/* กลยุทธ์: network-first สำหรับไฟล์ในเว็บ (ได้ของสดเสมอเมื่อออนไลน์) · ออฟไลน์ค่อยใช้ cache
-   ไม่ยุ่งกับ cross-origin (Google Sheet sync / Google Fonts) ปล่อยให้ผ่าน network ปกติ */
-const VER = 'v39';
+/* กลยุทธ์:
+   - HTML / JS / CSS / manifest / json  → network-first + revalidate (cache:'no-cache') → ได้ไฟล์ใหม่ทันทีหลัง deploy, ออฟไลน์ค่อยใช้ cache
+   - รูปภาพ (png/jpg) ไม่เคยเปลี่ยน       → cache-first (ไม่ยิงเน็ตซ้ำทุกครั้งที่เปิด — รูปรวม ~5 MB)
+   - version.json และ URL ที่มี ?t= / ?u=  → ไม่เก็บ cache (กันสะสม entry ไม่รู้จบ)
+   - cross-origin (Google Sheet sync / Google Fonts) → ปล่อยผ่าน network ปกติ
+   - เทียบ cache แบบ ignoreSearch → ?v=N / ?u=ts ไม่ทำให้พลาด cache ตอนออฟไลน์ */
+const VER = 'v40';
 const CACHE = 'milling-' + VER;
 const SHELL = [
   './', 'index.html', 'dashboard.html',
-  'shared.css?v=39', 'shared.js?v=39', 'input.js?v=39', 'dashboard.js?v=39',
-  'logo.png', 'milling.png', 'truck.png',
-  'icon-192.png?v=39', 'icon-512.png?v=39', 'manifest.webmanifest?v=39'
+  'shared.css', 'shared.js', 'input.js', 'dashboard.js',
+  'logo.png', 'milling.png', 'truck.png', 'Background.jpg',
+  'icon-192.png', 'icon-512.png', 'manifest.webmanifest'
 ];
+const IMG_RE = /\.(png|jpe?g|gif|webp|svg|ico)$/i;
+
+function isVolatile(url) {           // ไม่เก็บลง cache
+  return /version\.json$/.test(url.pathname) || url.searchParams.has('t') || url.searchParams.has('u');
+}
+function pageFallback(url) {         // ออฟไลน์: คืนหน้าเดิมที่ขอ ไม่ใช่ index เสมอ
+  return caches.match(url.pathname, { ignoreSearch: true })
+    .then(function (r) { return r || caches.match('index.html', { ignoreSearch: true }); });
+}
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function (c) {
-    // เก็บทีละไฟล์ กัน 1 ไฟล์พังแล้วล้มทั้งชุด
-    return Promise.all(SHELL.map(function (u) { return c.add(u).catch(function () {}); }));
+    return Promise.all(SHELL.map(function (u) { return c.add(u).catch(function () {}); })); // ทีละไฟล์ กัน 1 ไฟล์พังแล้วล้มทั้งชุด
   }));
 });
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k !== CACHE; })
-      .map(function (k) { return caches.delete(k); }));
+    return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
 
@@ -30,19 +41,36 @@ self.addEventListener('fetch', function (e) {
   if (req.method !== 'GET') return;
   var url;
   try { url = new URL(req.url); } catch (err) { return; }
-  if (url.origin !== self.location.origin) return; // ปล่อย sync/ฟอนต์ผ่าน network เอง
+  if (url.origin !== self.location.origin) return;           // ปล่อย sync/ฟอนต์ผ่าน network เอง
 
-  e.respondWith(
-    fetch(req).then(function (res) {
-      if (res && res.status === 200) {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
-      }
-      return res;
-    }).catch(function () {
-      return caches.match(req).then(function (r) {
-        return r || caches.match('index.html');
+  var isNav = req.mode === 'navigate';
+  var isImg = IMG_RE.test(url.pathname);
+
+  // รูป: cache-first
+  if (isImg) {
+    e.respondWith(caches.match(req, { ignoreSearch: true }).then(function (r) {
+      return r || fetch(req).then(function (res) {
+        if (res && res.status === 200) { var c1 = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, c1); }).catch(function () {}); }
+        return res;
       });
-    })
-  );
+    }));
+    return;
+  }
+
+  // HTML/JS/CSS/json: network-first + revalidate. navigation ใช้ URL string (Request mode:navigate + init ทำบางเบราว์เซอร์เก่า throw)
+  var net = isNav
+    ? fetch(url.href, { cache: 'no-cache', credentials: 'same-origin' })
+    : fetch(req, { cache: 'no-cache' });
+
+  e.respondWith(net.then(function (res) {
+    if (res && res.status === 200 && !isVolatile(url)) {
+      var copy = res.clone();
+      caches.open(CACHE).then(function (c) { c.put(isNav ? url.pathname : req, copy); }).catch(function () {}); // เก็บ HTML ด้วย pathname (ไม่ติด ?u=)
+    }
+    return res;
+  }).catch(function () {
+    return caches.match(req, { ignoreSearch: true }).then(function (r) {
+      return r || (isNav ? pageFallback(url) : Response.error());
+    });
+  }));
 });

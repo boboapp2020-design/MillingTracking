@@ -6,10 +6,10 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const SAT_ANCHOR=new Date(2026,8,5);
-function isOffSaturday(d){if(d.getDay()!==6)return false;const w=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-SAT_ANCHOR)/86400000/7);return ((w%2)+2)%2===0;}
-function isHoliday(d){return d.getDay()===0||isOffSaturday(d);}
-function weekSatOff(d){const day=d.getDay();const mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()+(day===0?-6:1-day));const sat=new Date(mon);sat.setDate(mon.getDate()+5);return isOffSaturday(sat);}
+const APP_VER=40; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+/* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
+const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
+function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
 function workingSerials(s,f){if(s==null||f==null)return[];if(f<s)[s,f]=[f,s];const out=[];for(let x=s;x<=f;x++)if(!isHoliday(sd(x)))out.push(x);return out.length?out:[s];}
 
 const SEED={groups:[
@@ -62,6 +62,10 @@ function normalizeData(d){try{if(!d||!d.groups)return d;
     });}));
     d.mig=5;
   }
+  if((d.mig||0)<6){ // ครั้งเดียว (ตั้งต้นกติกาวัน 03/09/2026): งานที่ช่วงวันคาบวันหยุดใหม่ (11/09, 26/10) จะมีวันทำงานน้อยกว่า days → ขยับวันเสร็จให้ครบ
+    d.groups.forEach(g=>g.machines.forEach(m=>m.tasks.forEach(t=>{if(t.start==null||t.finish==null||!(t.days>0))return;let f=t.finish,guard=0;while(workingSerials(t.start,f).length<t.days&&guard<400){f++;guard++;}if(f!==t.finish)t.finish=f;})));
+    d.mig=6;
+  }
 }catch(e){}return d;}
 /* ---- รวม log แบบ convergent: ไม่ทับกัน · อัปเดตสถานะข้ามเครื่องได้ · ทุกเครื่องลู่เข้าค่าเดียวกัน ---- */
 function logRev(L){return Math.max(+L.reviewTs||0,+L.ts||0,+L.edited||0);}
@@ -97,10 +101,10 @@ let saveTimer=null;
 function save(){DATA.updated=Date.now();try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}const st=$("saveTxt");if(st)st.textContent="บันทึกแล้ว "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});}
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,400);if(typeof schedulePush==="function")schedulePush();}
 
-/* ---- weight = man-hour (9h Mon-Fri in Saturday-off weeks, else 8h; holidays excluded) ---- */
-function hoursForDay(d){if(isHoliday(d))return 0;return (d.getDay()>=1&&d.getDay()<=5&&weekSatOff(d))?9:8;}
-function manday(t){return (t.days>0&&t.labor>0)?t.days*t.labor:0;}
-function manhour(t){if(!(t.labor>0)||!(t.days>0))return 0;if(t.start==null)return t.labor*t.days*8;let c=0,sum=0,x=t.start,g=0;while(c<t.days&&g<600){const h=hoursForDay(sd(x));if(h>0){sum+=h;c++;}x++;g++;}return t.labor*sum;}
+/* ---- น้ำหนักงาน = man-hour = คน × วัน × 8 ชม. (วันหยุดไม่นับ) — สูตรเดียว ตรวจด้วยมือได้ ---- */
+const HOURS_PER_DAY=8;
+function manday(t){return (t.days>0&&t.labor>0)?t.days*t.labor:0;}   // คน × วัน
+function manhour(t){return manday(t)*HOURS_PER_DAY;}                 // คน × วัน × 8 ชม. (สูตรเดียวทั้งระบบ)
 const isExcluded=m=>m.id==='pdump';
 function machineRawMH(m){let s=0;m.tasks.forEach(t=>s+=manhour(t));return s;}
 function totalMandays(){let s=0;DATA.groups.forEach(g=>g.machines.forEach(m=>{if(isExcluded(m))return;s+=machineRawMH(m);}));return s||1;}
@@ -109,8 +113,7 @@ function taskWeightInJob(t,m){const raw=machineRawMH(m);return raw>0?manhour(t)/
 function machineMandays(m){return machineRawMH(m);}
 function machineActual(m){const total=totalMandays();let rw=0,ra=0;m.tasks.forEach(t=>{const mh=manhour(t);rw+=mh;ra+=mh*(t.prog||0)/100;});const localPct=rw>0?ra/rw*100:0;return {weight:isExcluded(m)?0:rw/total*100,actual:isExcluded(m)?0:ra/total*100,localPct,rawMH:rw};}
 /* man-hour ที่ใช้ไปจริง = ผลรวมของ log ที่อนุมัติแล้ว (คน × ชม.ทำงานของวันนั้น) */
-function serialOfDateStr(s){if(!s)return null;const p=String(s).split("/");if(p.length<3)return null;return dToSerial(new Date(+p[2],+p[1]-1,+p[0]));}
-function consumedMH(mid,ti){let sum=0;(DATA.logs||[]).forEach(L=>{if(L.status==="approved"&&L.mid===mid&&L.ti===ti){const ser=serialOfDateStr(L.date);const h=ser==null?8:(hoursForDay(sd(ser))||8);sum+=(+L.labor||0)*h;}});return sum;}
+function consumedMH(mid,ti){let sum=0;(DATA.logs||[]).forEach(L=>{if(L.status==="approved"&&L.mid===mid&&L.ti===ti)sum+=(+L.labor||0)*HOURS_PER_DAY;});return sum;} // คน × 8 ชม. ต่อวันที่บันทึก
 function machineConsumedMH(m){let s=0;m.tasks.forEach((t,i)=>{s+=consumedMH(m.id,i);});return s;}
 /* จำนวนวันที่ใช้ไป = จำนวนวัน (distinct) ที่บันทึกและอนุมัติแล้วของ task นั้น */
 function consumedDays(mid,ti){var s={};var c=0;(DATA.logs||[]).forEach(function(L){if(L.status==="approved"&&L.mid===mid&&L.ti===ti&&L.date&&!s[L.date]){s[L.date]=1;c++;}});return c;}
@@ -197,10 +200,10 @@ async function saveSnapshot(){
 }
 async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetch(syncGet("snap=1"));const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
 /* กำลังกรอกข้อมูลอยู่ไหม — ห้าม re-render ทับสิ่งที่ผู้ใช้พิมพ์ค้างไว้ */
-function isEditing(){const d=$("drawer"),r=$("rvModal");return !!((d&&d.classList.contains("on"))||(r&&r.classList.contains("on")));}
+function isEditing(){return !!document.querySelector(".drawer.on,.modal.on,.pinmodal.on");} // ทุกหน้าต่างที่เปิดอยู่ (ฟอร์ม/ตรวจ/PIN/drill-down/day view) ทั้ง 2 หน้า
 /* pull = รวมข้อมูลเสมอ ไม่เขียนทับของเครื่องตัวเอง (เดิม force ทับทิ้ง → งานหาย/เด้งกลับ) */
 let pulling=false;
-async function pullRemote(silent,force){if(!syncUrl)return false;
+async function pullRemote(silent){if(!syncUrl)return false;
   if(pulling)return false;pulling=true;lastPullAt=Date.now();
   if(!silent)setSyncBtn("busy");
   try{const res=await fetch(syncGet());const j=await res.json();
@@ -233,6 +236,24 @@ function startPolling(){
   window.addEventListener("online",function(){pullRemote(true);});
   window.addEventListener("focus",function(){if(!isEditing())pullRemote(true);});
 }
+/* ---- อัปเดตตัวเองอัตโนมัติ: เช็ค version.json — ถ้าเวอร์ชันบนเว็บใหม่กว่า โหลดหน้าใหม่เอง (ไม่ต้องให้ใครกด F5) ---- */
+let updating=false;
+function startUpdateCheck(){
+  async function check(){
+    if(updating||isEditing()||pushing||pushTimer||saveTimer)return;   // ห้ามรีโหลดตอนกรอก/กำลัง push/มีงานค้างส่ง
+    try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();
+      const v=+j.v;if(!(v>APP_VER))return;
+      let tried=0;try{tried=+sessionStorage.getItem("mr_updTo")||0;}catch(e){}
+      if(tried>=v)return;                                           // เคยรีโหลดเพื่อเวอร์ชันนี้แล้วแต่ยังได้ไฟล์เก่า (CDN ยังไม่ทัน) → รอ ไม่วนซ้ำ
+      updating=true;try{sessionStorage.setItem("mr_updTo",String(v));}catch(e){}
+      notify("มีเวอร์ชันใหม่","กำลังอัปเดตแอปอัตโนมัติ…");
+      setTimeout(function(){location.replace(location.pathname+"?u="+v+location.hash);},900); // ?u= ข้าม cache ของ HTML · คง #hash ไว้
+    }catch(e){}
+  }
+  setInterval(function(){if(document.visibilityState==="visible")check();},60000);
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")check();});
+  // ไม่เช็คทันทีตอน boot: หน้าที่เพิ่งโหลดใหม่ย่อมได้ไฟล์ล่าสุดแล้ว (กันรีโหลดซ้ำ + ไม่แย่ง connection ตอนเปิดหน้า)
+}
 function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
   const sDate=$("snapDate");if(sDate){const t=new Date();const q=n=>String(n).padStart(2,"0");const iso=t.getFullYear()+"-"+q(t.getMonth()+1)+"-"+q(t.getDate());sDate.value=iso;sDate.max=iso;sDate.min="2026-09-01";}
@@ -261,5 +282,6 @@ function fitPage(){const app=$("app");if(!app)return;const vw=document.documentE
 function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout(window._fit);window._fit=setTimeout(fitPage,60);});window.addEventListener("load",fitPage);
   try{new ResizeObserver(()=>fitPage()).observe($("app"));}catch(e){}}
 /* boot — call after the page defines render() */
-function boot(){wireCommon();wireSync();render();save();setupFit();setSyncBtn("busy");
-  pullRemote(true).finally(()=>{syncReady=true;startPolling();});}
+function boot(){try{const q=new URLSearchParams(location.search);if(q.has("u")){q.delete("u");const s=q.toString();history.replaceState(null,"",location.pathname+(s?"?"+s:"")+location.hash);}}catch(e){} // ล้างเฉพาะ ?u= หลังอัปเดตอัตโนมัติ (คง param อื่น/#hash)
+  wireCommon();wireSync();render();save();setupFit();setSyncBtn("busy");
+  pullRemote(true).finally(()=>{syncReady=true;startPolling();startUpdateCheck();});}
