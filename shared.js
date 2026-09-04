@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=58; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=59; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -162,10 +162,81 @@ function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&l
 (function(){var t="light";try{t=localStorage.getItem("mr_theme")||"light";}catch(e){}document.documentElement.setAttribute("data-theme",t);})();
 function wireCommon(){
   const bt=$("btnTheme");if(bt)bt.addEventListener("click",()=>{const r=document.documentElement;const cur=r.getAttribute("data-theme");const next=cur==="dark"?"light":(cur==="light"?"dark":(matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark"));r.setAttribute("data-theme",next);try{localStorage.setItem("mr_theme",next);}catch(e){}if(typeof onThemeChange==="function")onThemeChange();});
-  const be=$("btnExport");if(be)be.addEventListener("click",()=>{const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download="milling_repair_"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(u);});
-  const bi=$("btnImport");if(bi)bi.addEventListener("click",()=>$("fileIn").click());
-  const fi=$("fileIn");if(fi)fi.addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(p&&p.groups){if(!p.pins)p.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(p);applyApprovedLogs();save();render();alert("นำเข้าข้อมูลสำเร็จ");}else alert("ไฟล์ไม่ถูกต้อง");}catch(err){alert("อ่านไฟล์ไม่ได้");}};r.readAsText(f);e.target.value="";});
+  const be=$("btnExport");if(be)be.addEventListener("click",exportExcel);          // ส่งออกเป็น Excel (.xlsx) สร้างเองในเครื่อง ไม่พึ่ง library
+  const br=$("btnRank");if(br)br.addEventListener("click",openRanking);
+  const rc=$("rankClose");if(rc)rc.addEventListener("click",closeRanking);const rs=$("rankScrim");if(rs)rs.addEventListener("click",closeRanking);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){const m=$("rankModal");if(m&&m.classList.contains("on"))closeRanking();}});
 }
+
+/* ===== Ranking: ผู้บันทึกคนไหนทำให้ % ภาพรวมขึ้นมากที่สุด =====
+   นับเฉพาะ log ที่ "ตรวจแล้ว" · ต่อ 1 งาน เรียง log ตามวันที่บันทึก (แล้วเวลา) → ส่วนที่ % เพิ่มจากบันทึกก่อนหน้า × น้ำหนักงานในภาพรวม (คน×วัน×8 / Σ ทั้งโปรเจกต์)
+   ผลรวมของทุกคน = % รวมสะสมที่มาจาก log (ไม่รวมงานที่ตั้งเป็น 100% ไว้ก่อนเริ่มระบบ) */
+/* รายชื่อผู้บันทึก + PIN ประจำตัว (เพิ่ม/เปลี่ยนคน = แก้ที่นี่ที่เดียว) */
+const RECORDERS=[{name:"ท้าวกอ",pin:"1111"},{name:"ท้าวสีมอน",pin:"2222"},{name:"สะหว่าง ไชโลวง",pin:"3333"},{name:"กองคำ พมหลวงจี",pin:"4444"},{name:"สุกสะหวัน",pin:"6666"},{name:"พูนสีน",pin:"7777"},{name:"สีพะจัน",pin:"8888"}];
+function recorderByName(n){n=(n||"").trim();return RECORDERS.find(r=>r.name===n)||null;}
+function canonName(n){n=(n||"").trim();if(!n||n==="ไม่ระบุ")return "ไม่ระบุชื่อ";const r=RECORDERS.find(r=>r.name===n||r.name==="ท้าว"+n);return r?r.name:n;} // "สีมอน" (พิมพ์ในชีท) → "ท้าวสีมอน" นับเป็นคนเดียวกัน
+function rankingData(){const total=totalMandays();const byTask={};
+  (DATA.logs||[]).forEach(L=>{if(!L||L.status!=="approved"||!L.mid)return;const k=L.mid+"|"+L.ti;(byTask[k]=byTask[k]||[]).push(L);});
+  const people={};
+  Object.keys(byTask).forEach(k=>{const p=k.split("|");const m=machineById(p[0]);if(!m||isExcluded(m))return;const t=m.tasks[+p[1]];if(!t)return;const w=manhour(t)/total*100;
+    const logs=byTask[k].sort((a,b)=>((dmyToSerial(a.date)||0)-(dmyToSerial(b.date)||0))||((a.ts||0)-(b.ts||0)));let prev=0;
+    logs.forEach(L=>{const pr=Math.max(0,Math.min(100,+L.prog||0));const d=Math.max(0,pr-prev);if(pr>prev)prev=pr;
+      const name=canonName(L.by);const P=people[name]=people[name]||{name,pct:0,logs:0,tasks:{},mh:0};
+      P.pct+=w*d/100;P.logs++;P.tasks[k]=1;P.mh+=(+L.labor||0)*HOURS_PER_DAY;});});
+  return Object.keys(people).map(n=>{const P=people[n];return {name:P.name,pct:P.pct,logs:P.logs,tasks:Object.keys(P.tasks).length,mh:P.mh};}).sort((a,b)=>b.pct-a.pct||b.logs-a.logs);}
+function openRanking(){const md=$("rankModal"),sc=$("rankScrim"),body=$("rankBody");if(!md||!body)return;
+  const rows=rankingData();const sum=rows.reduce((s,r)=>s+r.pct,0);const max=rows.length?Math.max(rows[0].pct,0.0001):1;const medal=["🥇","🥈","🥉"];
+  const sub=$("rankSub");if(sub)sub.textContent=rows.length?`อันดับ 1: ${rows[0].name} · ทำให้ภาพรวมขึ้น ${rows[0].pct.toFixed(2)}% · รวมทุกคน ${sum.toFixed(2)}% (จาก ${actualPct().toFixed(1)}% ทั้งหมด)`:"ยังไม่มีรายการที่ตรวจแล้ว";
+  body.innerHTML=rows.length?rows.map((r,i)=>`<div class="rk-row ${i<3?'top'+(i+1):''}"><div class="rk-no">${medal[i]||(i+1)}</div><div class="rk-main"><div class="rk-name">${escapeHtml(r.name)}</div><div class="rk-bar"><i style="width:${Math.max(2,r.pct/max*100).toFixed(1)}%"></i></div><div class="rk-meta">${r.logs} รายการ · ${r.tasks} งาน · ${r.mh} man-hour</div></div><div class="rk-pct num">+${r.pct.toFixed(2)}<small>%</small></div></div>`).join(""):'<div class="logempty">ยังไม่มีรายการที่ “ตรวจแล้ว” — อนุมัติรายการในสมุดบันทึกก่อน จึงจะจัดอันดับได้</div>';
+  sc.classList.add("on");md.classList.add("on");}
+function closeRanking(){const md=$("rankModal"),sc=$("rankScrim");if(md)md.classList.remove("on");if(sc)sc.classList.remove("on");}
+
+/* ===== ส่งออก Excel (.xlsx) โดยไม่พึ่ง library: ไฟล์ .xlsx = zip (store) ของ XML ขั้นต่ำ ===== */
+const CRC_T=(function(){const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipStore(files){const enc=new TextEncoder();const parts=[],cd=[];let off=0;const d=new Date();
+  const dosT=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF,dosD=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  const u16=v=>[v&255,(v>>8)&255],u32=v=>[v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255];
+  files.forEach(f=>{const nm=enc.encode(f.name);const crc=crc32(f.data),n=f.data.length;
+    const lh=new Uint8Array([].concat(u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(dosT),u16(dosD),u32(crc),u32(n),u32(n),u16(nm.length),u16(0),Array.from(nm)));
+    parts.push(lh,f.data);
+    cd.push(new Uint8Array([].concat(u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(dosT),u16(dosD),u32(crc),u32(n),u32(n),u16(nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(off),Array.from(nm))));
+    off+=lh.length+n;});
+  const cdLen=cd.reduce((s,c)=>s+c.length,0);
+  const eocd=new Uint8Array([].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cdLen),u32(off),u16(0)));
+  return new Blob(parts.concat(cd,[eocd]),{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});}
+function xmlEsc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function colRef(i){let s="";i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;}
+function sheetXml(rows,widths){let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+  if(widths)x+='<cols>'+widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")+'</cols>';
+  x+='<sheetData>';rows.forEach((r,ri)=>{x+=`<row r="${ri+1}">`;r.forEach((c,ci)=>{if(c==null||c==="")return;const ref=colRef(ci)+(ri+1);
+    if(typeof c==="number")x+=`<c r="${ref}"${ri===0?' s="1"':''}><v>${c}</v></c>`;
+    else if(typeof c==="object"&&c.pct!=null)x+=`<c r="${ref}" s="2"><v>${c.pct}</v></c>`;
+    else x+=`<c r="${ref}" t="inlineStr"${ri===0?' s="1"':''}><is><t xml:space="preserve">${xmlEsc(c)}</t></is></c>`;});x+='</row>';});
+  return x+'</sheetData></worksheet>';}
+const XLSX_STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs></styleSheet>';
+function buildXlsx(sheets){const enc=new TextEncoder();const files=[];const N=sheets.length;
+  files.push({name:"[Content_Types].xml",data:enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")+'</Types>')});
+  files.push({name:"_rels/.rels",data:enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')});
+  files.push({name:"xl/workbook.xml",data:enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sheets.map((s,i)=>`<sheet name="${xmlEsc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")+'</sheets></workbook>')});
+  files.push({name:"xl/_rels/workbook.xml.rels",data:enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")+`<Relationship Id="rId${N+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`)});
+  files.push({name:"xl/styles.xml",data:enc.encode(XLSX_STYLES)});
+  sheets.forEach((s,i)=>files.push({name:`xl/worksheets/sheet${i+1}.xml`,data:enc.encode(sheetXml(s.rows,s.widths))}));
+  return zipStore(files);}
+function exportExcel(){const total=totalMandays();const today=thaiDMY();const P2=n=>String(n).padStart(2,"0");
+  const F=s=>{if(s==null||s==="")return "";const d=sd(s);return P2(d.getDate())+"/"+P2(d.getMonth()+1)+"/"+d.getFullYear();};
+  const tasks=[["กลุ่ม","เครื่องจักร","งาน (Task)","จำนวนวัน","จำนวนคน","เริ่ม","เสร็จ","man-hour (คน×วัน×8)","% คืบหน้า","ทำแล้ว (man-hour)","น้ำหนักในภาพรวม","หมายเหตุ","สถานะ"]];
+  DATA.groups.forEach(g=>g.machines.forEach(m=>m.tasks.forEach(t=>{const mh=manhour(t);const pr=+t.prog||0;tasks.push([g.name,m.name,t.name,t.days??"",t.labor??"",F(t.start),F(t.finish),mh||"",{pct:pr/100},mh?+(mh*pr/100).toFixed(1):"",{pct:isExcluded(m)?0:mh/total},t.note||"",pr>=100?"เสร็จ":(pr>0?"กำลังทำ":"ยังไม่เริ่ม")]);})));
+  const ST={pending:"รอตรวจสอบ",approved:"ตรวจแล้ว",rejected:"งานไม่ผ่าน (% ไม่นับ)"};
+  const logs=[["วันที่","เครื่องจักร","งาน (Task)","ผู้บันทึก","จำนวนคน","% คืบหน้า","หมายเหตุ","สถานะ","ตรวจโดย","เวลาบันทึก"]];
+  (DATA.logs||[]).filter(L=>L&&L.status!=="deleted").sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(L=>logs.push([L.date||"",L.machineName||"",L.taskName||"",L.by||"",L.labor??"",{pct:(+L.prog||0)/100},L.note||"",ST[L.status]||L.status||"",L.reviewBy||"",L.ts?new Date(L.ts).toLocaleString("th-TH",{timeZone:"Asia/Bangkok"}):""]));
+  const rk=[["อันดับ","ผู้บันทึก","% ที่ทำให้ภาพรวมขึ้น","จำนวนรายการ (ตรวจแล้ว)","จำนวนงาน","man-hour ที่บันทึก"]];
+  rankingData().forEach((r,i)=>rk.push([i+1,r.name,{pct:r.pct/100},r.logs,r.tasks,r.mh]));
+  const sum=[["รายการ","ค่า"],["% รวมสะสม (จริง)",{pct:actualPct()/100}],["% ตามแผน ณ วันนี้",{pct:planPctUpTo(TODAY_SERIAL)/100}],["Σ man-hour ทั้งโปรเจกต์ (ไม่รวม drump+ตะกาว)",+total.toFixed(1)],["วันที่ส่งออก",today],["เวอร์ชันแอป","v"+APP_VER]];
+  const blob=buildXlsx([{name:"สรุป",rows:sum,widths:[40,18]},{name:"งาน",rows:tasks,widths:[16,18,46,9,9,12,12,20,11,17,15,24,11]},{name:"LogBook",rows:logs,widths:[12,18,46,18,9,11,24,22,10,20]},{name:"Ranking",rows:rk,widths:[8,22,20,22,12,18]}]);
+  const fname="milling_repair_"+today.split("/").reverse().join("-")+".xlsx";
+  const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);
+  if(typeof notify==="function")notify("ส่งออก Excel แล้ว",fname+" · 4 ชีท: สรุป / งาน / LogBook / Ranking");}
 
 /* ---- Google Sheet sync (Apps Script backend) — URL ฝังไว้ถาวร ผู้ใช้แก้ไม่ได้ ---- */
 const SYNC_URL="https://script.google.com/macros/s/AKfycbwz5JC3AsGW4SRS-suhTRwFi4Z1jQDV5VT1t7laGr08aoj8EFrXDmLxVr4dXxbcBnHU/exec";

@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard — งานซ่อมลูกหีบ</title>
-<link rel="icon" type="image/png" href="logo.png?v=58">
-<link rel="apple-touch-icon" href="icon-192.png?v=58">
-<link rel="manifest" href="manifest.webmanifest?v=58">
+<link rel="icon" type="image/png" href="logo.png?v=59">
+<link rel="apple-touch-icon" href="icon-192.png?v=59">
+<link rel="manifest" href="manifest.webmanifest?v=59">
 <meta name="theme-color" content="#0e7c8b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ซ่อมลูกหีบ">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=58">
+<link rel="stylesheet" href="shared.css?v=59">
 <style>
 .jtbl{width:100%;border-collapse:collapse;font-size:13px}
 .jtbl th{font-size:11px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 8px;border-bottom:2px solid var(--line)}
@@ -222,7 +222,7 @@ body.dash #detail .dttbl tbody tr:hover td{background:linear-gradient(90deg,colo
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <img class="logo" src="logo.png?v=58" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
+      <img class="logo" src="logo.png?v=59" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
       <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
       <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
@@ -232,10 +232,8 @@ body.dash #detail .dttbl tbody tr:hover td{background:linear-gradient(90deg,colo
     <label class="snapwrap" title="เลือกวันที่บันทึกผล (คลิกเพื่อเปิดปฏิทิน)"><span class="ic">📅</span><span class="snaptxt num" id="snapTxt">—</span><input type="date" id="snapDate" class="snapnative" min="2026-09-01"></label>
     <button class="tbtn" id="btnSnap">บันทึกผล</button>
     <button class="tbtn" id="btnSync" title="คลิกเพื่อดึงข้อมูลล่าสุดจากชีท">ซิงค์</button>
-    <button class="tbtn" id="btnExport">ส่งออก</button>
-    <button class="tbtn" id="btnImport">นำเข้า</button>
-    <button class="tbtn" id="btnTheme">ธีม</button>
-    <input type="file" id="fileIn" accept="application/json" hidden>
+    <button class="tbtn" id="btnExport" title="ดาวน์โหลดไฟล์ Excel (.xlsx) 4 ชีท: สรุป / งาน / LogBook / Ranking">📥 ส่งออก Excel</button>
+    <button class="tbtn rank" id="btnRank" title="จัดอันดับผู้บันทึกที่ทำให้ % ภาพรวมขึ้นมากที่สุด">🏆 Ranking</button>
   </div>
 </header>
 <div id="appWrap"><div id="app">
@@ -297,8 +295,15 @@ body.dash #detail .dttbl tbody tr:hover td{background:linear-gradient(90deg,colo
   <div class="dbody tblwrap" id="dtBody"></div>
 </aside>
 
-<script src="shared.js?v=58"></script>
-<script src="dashboard.js?v=58"></script>
+<!-- Ranking popup (กลางจอ) -->
+<div class="scrim" id="rankScrim"></div>
+<div class="rankmodal modal" id="rankModal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="rk-head"><div><div class="rk-title">🏆 Ranking ผู้บันทึก</div><div class="rk-sub" id="rankSub">ใครทำให้ % ภาพรวมขึ้นมากที่สุด</div></div><button class="xbtn" id="rankClose" title="ปิด">✕</button></div>
+  <div class="rk-body" id="rankBody"></div>
+  <div class="rk-foot">นับเฉพาะรายการที่ “ตรวจแล้ว” · % = น้ำหนักงาน (คน×วัน×8) × ส่วนที่เพิ่มขึ้นจากบันทึกก่อนหน้า</div>
+</div>
+<script src="shared.js?v=59"></script>
+<script src="dashboard.js?v=59"></script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>
