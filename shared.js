@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=59; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=60; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -172,9 +172,10 @@ function wireCommon(){
    นับเฉพาะ log ที่ "ตรวจแล้ว" · ต่อ 1 งาน เรียง log ตามวันที่บันทึก (แล้วเวลา) → ส่วนที่ % เพิ่มจากบันทึกก่อนหน้า × น้ำหนักงานในภาพรวม (คน×วัน×8 / Σ ทั้งโปรเจกต์)
    ผลรวมของทุกคน = % รวมสะสมที่มาจาก log (ไม่รวมงานที่ตั้งเป็น 100% ไว้ก่อนเริ่มระบบ) */
 /* รายชื่อผู้บันทึก + PIN ประจำตัว (เพิ่ม/เปลี่ยนคน = แก้ที่นี่ที่เดียว) */
-const RECORDERS=[{name:"ท้าวกอ",pin:"1111"},{name:"ท้าวสีมอน",pin:"2222"},{name:"สะหว่าง ไชโลวง",pin:"3333"},{name:"กองคำ พมหลวงจี",pin:"4444"},{name:"สุกสะหวัน",pin:"6666"},{name:"พูนสีน",pin:"7777"},{name:"สีพะจัน",pin:"8888"}];
+const RECORDERS=[{name:"ท้าวสีมอน",pin:"2222"},{name:"สะหว่าง ไชโลวง",pin:"3333"},{name:"กองคำ พมหลวงจี",pin:"4444"},{name:"สุกสะหวัน",pin:"6666"},{name:"พูนสีน",pin:"7777"},{name:"สีพะจัน",pin:"8888"}];
+const NAME_ALIAS={"ท้าวกอ":"กองคำ พมหลวงจี","กอ":"กองคำ พมหลวงจี","สีมอน":"ท้าวสีมอน"}; // ชื่อเดิม/ชื่อย่อ → ชื่อทางการ (ท้าวกอ = กองคำ พมหลวงจี)
 function recorderByName(n){n=(n||"").trim();return RECORDERS.find(r=>r.name===n)||null;}
-function canonName(n){n=(n||"").trim();if(!n||n==="ไม่ระบุ")return "ไม่ระบุชื่อ";const r=RECORDERS.find(r=>r.name===n||r.name==="ท้าว"+n);return r?r.name:n;} // "สีมอน" (พิมพ์ในชีท) → "ท้าวสีมอน" นับเป็นคนเดียวกัน
+function canonName(n){n=(n||"").trim();if(!n||n==="ไม่ระบุ")return "ไม่ระบุชื่อ";if(NAME_ALIAS[n])return NAME_ALIAS[n];const r=RECORDERS.find(r=>r.name===n||r.name==="ท้าว"+n);return r?r.name:n;}
 function rankingData(){const total=totalMandays();const byTask={};
   (DATA.logs||[]).forEach(L=>{if(!L||L.status!=="approved"||!L.mid)return;const k=L.mid+"|"+L.ti;(byTask[k]=byTask[k]||[]).push(L);});
   const people={};

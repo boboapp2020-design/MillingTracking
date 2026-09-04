@@ -38,7 +38,11 @@ button{font-family:inherit;cursor:pointer}
 
 /* header */
 header.top{position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line2)}
-.top-in{max-width:none;margin:0;padding:11px 26px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top-in{max-width:none;margin:0;padding:11px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.top-in>.tbtn,.top-in>.snapwrap{flex:0 0 auto}
+.top-in .brand{margin-right:auto}                 /* ดันปุ่มทั้งหมดไปชิดขวา อยู่แถวเดียวกัน */
+.top-in .tbtn{padding:7px 11px;font-size:12px}    /* ย่อปุ่มบนหัวให้พอดีแถวเดียว */
+.top-in .tbtn.rank{padding:7px 13px;font-size:12.5px}
 .brand{display:flex;align-items:center;gap:12px;margin-right:auto}
 .logo{width:44px;height:44px;border-radius:10px;flex:0 0 auto;object-fit:contain;display:block;filter:drop-shadow(0 2px 4px rgba(10,20,35,.25))}
 .brand h1{font-size:16px;line-height:1.15}

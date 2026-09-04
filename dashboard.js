@@ -100,9 +100,9 @@ function openDetail(mid){const m=machineById(mid);if(!m)return;const g=groupOf(m
   $("dtSub").textContent=g.name+" · "+m.tasks.length+" งาน"+(m.owner?" · "+m.owner:"");
   const _used=machineConsumedMH(m),_tgt=a.rawMH,_rem=_tgt-_used;
   $("dtMini").innerHTML=`<div class="m"><div class="l">Man-hour รวม (เป้า)</div><div class="v">${Math.round(_tgt)} <span style="font-size:11px;color:var(--ink2)">man-hr</span></div></div><div class="m"><div class="l">ใช้ไปแล้ว</div><div class="v" style="color:var(--amber)">${Math.round(_used)}</div></div><div class="m"><div class="l">คงเหลือ</div><div class="v" style="color:${_rem<0?'var(--red)':'var(--green)'}">${Math.round(_rem)}</div></div>`;
-  $("dtBody").innerHTML=`<table class="dttbl"><thead><tr><th>งาน (Task)</th><th class="rt">คน</th><th class="rt">วัน</th><th class="rt">man-hr</th><th class="rt">%ใน Job</th><th>เริ่ม–เสร็จ</th><th class="rt">%</th></tr></thead><tbody>`+
-    m.tasks.map(t=>{const st=t.prog>=100?"done":(t.prog>0?"prog":"todo");const nw=manhour(t)===0;
-      return `<tr><td>${escapeHtml(t.name)}${t.note?`<div class="note-flag">⚑ ${escapeHtml(t.note)}</div>`:""}</td><td class="rt">${t.labor??"—"}</td><td class="rt">${t.days??"—"}</td><td class="rt">${nw?"—":manhour(t)}</td><td class="rt">${nw?"—":taskWeightInJob(t,m).toFixed(1)+"%"}</td><td style="font-size:11px;color:var(--ink2);white-space:nowrap">${fmtG(t.start)}${t.finish!=null?" – "+fmtG(t.finish):""}</td><td class="rt"><b style="color:${STCOL[st]}">${t.prog||0}%</b></td></tr>`;}).join("")+
+  $("dtBody").innerHTML=`<table class="dttbl"><thead><tr><th>งาน (Task)</th><th class="rt">คน</th><th class="rt">วัน</th><th class="rt">man-hr</th><th class="rt">%ใน Job</th><th>เริ่ม–เสร็จ</th><th class="rt">%</th><th>คาดว่าเสร็จ</th></tr></thead><tbody>`+
+    m.tasks.map(t=>{const st=t.prog>=100?"done":(t.prog>0?"prog":"todo");const nw=manhour(t)===0;const fc=taskFinishForecast(t);
+      return `<tr><td>${escapeHtml(t.name)}${t.note?`<div class="note-flag">⚑ ${escapeHtml(t.note)}</div>`:""}</td><td class="rt">${t.labor??"—"}</td><td class="rt">${t.days??"—"}</td><td class="rt">${nw?"—":manhour(t)}</td><td class="rt">${nw?"—":taskWeightInJob(t,m).toFixed(1)+"%"}</td><td style="font-size:11px;color:var(--ink2);white-space:nowrap">${fmtG(t.start)}${t.finish!=null?" – "+fmtG(t.finish):""}</td><td class="rt"><b style="color:${STCOL[st]}">${t.prog||0}%</b></td><td style="white-space:nowrap"${fc.title?` title="${escapeHtml(fc.title)}"`:""}><span class="fcpill ${fc.cls}">${fc.txt}</span></td></tr>`;}).join("")+
     `</tbody></table>`;
   $("dtScrim").classList.add("on");$("detail").classList.add("on");}
 function closeDetail(){$("dtScrim").classList.remove("on");$("detail").classList.remove("on");}
@@ -124,6 +124,19 @@ function openDayView(dstr){const logs=(DATA.logs||[]).filter(L=>L.date===dstr&&L
 function closeDayView(){$("dvScrim").classList.remove("on");$("dvModal").classList.remove("on");}
 
 function addWork(start,n){let s=start,cnt=0,guard=0;const need=Math.ceil(n);if(need<=0)return start;while(cnt<need&&guard<3000){s++;guard++;if(!isHoliday(sd(s)))cnt++;}return s;}
+/* คาดการณ์วันแล้วเสร็จของแต่ละงาน — จากความเร็วจริง (%/วันทำงาน นับจากวันเริ่มถึงวันนี้) เทียบกับกำหนดเดิม */
+function taskFinishForecast(t){
+  if(t.days==null||!(t.days>0)||t.start==null||t.finish==null)return {txt:"—",cls:"muted",title:"งานนี้ไม่มีกำหนดจำนวนวัน/วันที่ (เช่น หมุดวัสดุ)"};
+  const pr=Math.max(0,Math.min(100,+t.prog||0)),today=TODAY_SERIAL,planFin=t.finish;
+  if(pr>=100)return {txt:"✓ เสร็จแล้ว",cls:"ok"};
+  if(today<t.start)return {txt:fmtG(planFin),cls:"wait",title:"ยังไม่ถึงกำหนดเริ่ม — คาดตามแผน"};
+  const elapsed=Math.max(1,workingSerials(t.start,today).length); // วันทำงานที่ผ่านไปตั้งแต่เริ่มถึงวันนี้
+  if(pr<=0)return {txt:(today>planFin?"เลยกำหนดแล้ว":"ยังไม่คืบหน้า"),cls:(today>planFin?"late":"warn"),title:"เริ่มแล้วแต่ % ยังเป็น 0 — ยังคาดวันเสร็จไม่ได้"};
+  const rate=pr/elapsed; // %/วันทำงาน (ความเร็วจริง)
+  const remainDays=(100-pr)/rate;
+  const predicted=addWork(today,remainDays);
+  const cls=predicted<=planFin?"ok":"late";
+  return {txt:fmtG(predicted),cls,title:`ความเร็วจริง ${rate.toFixed(1)}%/วันทำงาน · เหลือ ~${Math.ceil(remainDays)} วันทำงาน`+(cls==="late"?` · ช้ากว่ากำหนด ${workingSerials(planFin,predicted).length-1} วัน`:"")};}
 function renderForecast(){const el=$("forecast");if(!el)return;const rng=projectRange(),s0=rng.min,s1=rng.max;
   const act=actualPct(),plan=planPctUpTo(TODAY_SERIAL),spi=plan>0?act/plan:1;
   const base=Math.min(Math.max(TODAY_SERIAL,s0),s1);const elapsed=workingSerials(s0,base).length;
