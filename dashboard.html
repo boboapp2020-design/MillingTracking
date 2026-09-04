@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard — งานซ่อมลูกหีบ</title>
-<link rel="icon" type="image/png" href="logo.png?v=56">
-<link rel="apple-touch-icon" href="icon-192.png?v=56">
-<link rel="manifest" href="manifest.webmanifest?v=56">
+<link rel="icon" type="image/png" href="logo.png?v=57">
+<link rel="apple-touch-icon" href="icon-192.png?v=57">
+<link rel="manifest" href="manifest.webmanifest?v=57">
 <meta name="theme-color" content="#0e7c8b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ซ่อมลูกหีบ">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=56">
+<link rel="stylesheet" href="shared.css?v=57">
 <style>
 .jtbl{width:100%;border-collapse:collapse;font-size:13px}
 .jtbl th{font-size:11px;color:var(--ink2);font-weight:700;text-align:left;padding:8px 8px;border-bottom:2px solid var(--line)}
@@ -68,8 +68,9 @@
 .cald.clk:hover{outline:2px solid var(--brand);outline-offset:-2px}
 .cald.hasrec{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--green) 45%,transparent)}
 :root{--curve-act:#f57c00} /* สีเส้น "จริงสะสม" บน S-curve (ส้มเข้ม ต่างจากเส้นแผนชัดเจน) */
-.cald.today,body.dash .cald.today{box-shadow:inset 0 0 0 3px var(--green),0 0 0 2px color-mix(in srgb,var(--green) 25%,transparent);font-weight:800}
-.cald.today.behind,body.dash .cald.today.behind{box-shadow:inset 0 0 0 3px var(--red),0 0 0 2px color-mix(in srgb,var(--red) 25%,transparent)}
+/* specificity สูงกว่า body.dash .cald.hasrec (ประกาศทีหลังในสกิน glossy) → ขอบวันนี้ต้องชนะเสมอ */
+body.dash .cald.today.ok,.cald.today.ok{box-shadow:inset 0 0 0 3px var(--green),0 0 0 2px color-mix(in srgb,var(--green) 25%,transparent)!important;font-weight:800}
+body.dash .cald.today.behind,.cald.today.behind{box-shadow:inset 0 0 0 3px var(--red),0 0 0 2px color-mix(in srgb,var(--red) 25%,transparent)!important;font-weight:800}
 .cald.today .mk{color:var(--green);font-weight:700}.cald.today.behind .mk{color:var(--red)}
 .cald .calrec{position:absolute;top:3px;right:4px;background:var(--green);color:#fff;font-size:9px;font-weight:700;border-radius:10px;min-width:15px;height:15px;line-height:15px;text-align:center;padding:0 3px}
 .dvrow{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line)}
@@ -221,7 +222,7 @@ body.dash #detail .dttbl tbody tr:hover td{background:linear-gradient(90deg,colo
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <img class="logo" src="logo.png?v=56" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
+      <img class="logo" src="logo.png?v=57" alt="โลโก้ ระบบติดตามงานซ่อมลูกหีบ">
       <div><h1>Dashboard · งานซ่อมลูกหีบ</h1>
       <div class="sub">Executive Overview · ปีการผลิต 2568/69 · สถานีหีบอ้อย</div></div>
     </div>
@@ -296,8 +297,8 @@ body.dash #detail .dttbl tbody tr:hover td{background:linear-gradient(90deg,colo
   <div class="dbody tblwrap" id="dtBody"></div>
 </aside>
 
-<script src="shared.js?v=56"></script>
-<script src="dashboard.js?v=56"></script>
+<script src="shared.js?v=57"></script>
+<script src="dashboard.js?v=57"></script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>
