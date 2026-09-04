@@ -30,7 +30,7 @@ $("resetPins").addEventListener("click",e=>{e.preventDefault();if(!confirm("ร�
 let curMid=null;
 function openDrawer(mid){if(editPins)return;curMid=mid;const m=machineById(mid);if(!m)return;const g=groupOf(m);
   $("dTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');$("dSub").textContent=g.name+" · "+m.tasks.length+" งาน";
-  const ow=$("dOwner");ow.value=m.owner||"";ow.classList.remove("req-err");ow.oninput=()=>{m.owner=ow.value;ow.classList.remove("req-err");scheduleSave();};
+  const ow=$("dOwner");fillRecorders(ow);ow.value=recorderByName(m.owner)?m.owner:"";ow.classList.remove("req-err");ow.onchange=()=>{m.owner=ow.value;ow.classList.remove("req-err");scheduleSave();};
   renderTasks();$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
 function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;renderDiagram();renderMachineList();}
 function dmy(serial){const s=isoOf(serial);if(!s)return "—";const p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
@@ -78,9 +78,17 @@ function renderTasks(){const m=machineById(curMid);
     card.querySelectorAll('.pstp').forEach(b=>b.addEventListener('click',()=>setP((+rg.value||0)+(+b.dataset.pstp))));
     card.querySelectorAll('[data-stp]').forEach(b=>b.addEventListener('click',()=>{let v=(+li.value||0)+(+b.dataset.stp);if(v<0)v=0;li.value=v;}));
   });}
+/* ===== ผู้บันทึก: เลือกจากรายชื่อ + ยืนยัน PIN ประจำตัวก่อนบันทึกทุกครั้ง ===== */
+const RECORDERS=[{name:"ท้าวกอ",pin:"1111"},{name:"ท้าวสีมอน",pin:"2222"},{name:"สะหว่าง ไชโลวง",pin:"3333"}];
+function recorderByName(n){n=(n||"").trim();return RECORDERS.find(r=>r.name===n)||null;}
+function fillRecorders(sel){if(!sel||sel.dataset.filled)return;RECORDERS.forEach(r=>{const o=document.createElement("option");o.value=r.name;o.textContent=r.name;sel.appendChild(o);});sel.dataset.filled="1";}
 function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}
-  const who=(m.owner||"").trim(); // บังคับลงชื่อผู้บันทึก
-  if(!who){const ow=$("dOwner");if(ow){ow.classList.add("req-err");ow.focus();ow.scrollIntoView({block:"center"});}notify("ต้องลงชื่อผู้บันทึก","กรุณากรอก “ชื่อผู้บันทึก” ก่อนกดบันทึกทุกครั้ง","err");return;}
+  const ow=$("dOwner");const who=((ow&&ow.value)||m.owner||"").trim();const rec=recorderByName(who); // บังคับเลือกชื่อผู้บันทึกจากรายชื่อ
+  if(!rec){if(ow){ow.value="";ow.classList.add("req-err");ow.focus();ow.scrollIntoView({block:"center"});}notify("ต้องเลือกชื่อผู้บันทึก","กรุณาเลือก “ชื่อผู้บันทึก” จากรายชื่อก่อนกดบันทึกทุกครั้ง","err");return;}
+  m.owner=rec.name;
+  askPin({mode:"save",who:rec.name,mid:curMid}); // → ใส่ PIN ประจำตัวถูกต้องแล้วจึง commitDrafts()
+}
+function commitDrafts(who){const m=machineById(curMid);if(!m){closeDrawer();return;}
   let n=0;
   $("taskBody").querySelectorAll(".tcard:not(.locked)").forEach(card=>{const i=+card.dataset.i;const t=m.tasks[i];
     const prog=Math.max(+t.prog||0,Math.max(0,Math.min(100,Math.round(+card.querySelector('.prg').value||0)))); // ไม่ต่ำกว่าที่ตรวจแล้ว
@@ -123,10 +131,16 @@ function renderLog(){const el=$("logList");if(!el)return;let logs=(DATA.logs||[]
 }
 function fmtTaskDate(L){return L.date||"—";}
 /* ===== PIN 4 หลัก — ใช้ตอน "กดอนุมัติ" เท่านั้น (เปิดดู/แก้ค่าได้โดยไม่ต้อง PIN แต่กดตรวจแล้วไม่ได้ถ้าไม่มี PIN) ===== */
-const REVIEW_PIN="5555";let pinTarget=null;
-function askPin(id){pinTarget=id;const bx=$("pinBox");if(bx)bx.value="";const er=$("pinErr");if(er)er.textContent="";$("pinScrim").classList.add("on");$("pinModal").classList.add("on");setTimeout(()=>bx&&bx.focus(),60);}
+const REVIEW_PIN="5555";let pinTarget=null; // string = id ของ log ที่จะอนุมัติ · object {mode:"save",who,mid} = ยืนยันตัวผู้บันทึกก่อนบันทึก
+function askPin(target){pinTarget=target;const bx=$("pinBox");if(bx)bx.value="";const er=$("pinErr");if(er)er.textContent="";
+  const tt=$("pinTitle");if(tt)tt.textContent=(target&&target.mode==="save")?("🔒 "+target.who+" — ใส่ PIN ประจำตัว 4 หลัก เพื่อยืนยันการบันทึก"):"🔒 ใส่ PIN 4 หลัก เพื่อยืนยันการอนุมัติ (ตรวจแล้ว)";
+  $("pinScrim").classList.add("on");$("pinModal").classList.add("on");setTimeout(()=>bx&&bx.focus(),60);}
 function closePin(){$("pinScrim").classList.remove("on");$("pinModal").classList.remove("on");pinTarget=null;}
-function submitPin(){const v=($("pinBox").value||"").trim();if(v===REVIEW_PIN){const id=pinTarget;closePin();if(reviewId===id)approveReview();}else{$("pinErr").textContent="PIN ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();}}
+function submitPin(){const v=($("pinBox").value||"").trim();const tg=pinTarget;
+  if(tg&&tg.mode==="save"){const rec=recorderByName(tg.who);
+    if(rec&&v===rec.pin){closePin();if(curMid===tg.mid&&$("drawer").classList.contains("on"))commitDrafts(rec.name);return;}
+    $("pinErr").textContent="PIN ของ "+tg.who+" ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();return;}
+  if(v===REVIEW_PIN){closePin();if(reviewId===tg)approveReview();}else{$("pinErr").textContent="PIN ไม่ถูกต้อง ลองใหม่";$("pinBox").value="";$("pinBox").focus();}}
 /* ===== Review / อนุมัติ ===== */
 let reviewId=null;
 function openReview(id){const L=(DATA.logs||[]).find(x=>x.id===id);if(!L)return;reviewId=id;
