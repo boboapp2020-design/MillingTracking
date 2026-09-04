@@ -110,13 +110,13 @@ function closeDetail(){$("dtScrim").classList.remove("on");$("detail").classList
 function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=HOLIDAYS; // แหล่งเดียวกับสูตรคำนวณ (shared.js)
   const holTxt=[...HOLIDAYS].sort((a,b)=>a-b).map(s=>fmtTH(s).slice(0,5)).join(" และ ");const ls=$("legSpecial");if(ls)ls.textContent="หยุดพิเศษ "+holTxt;const fh=$("footHol");if(fh)fh.textContent=holTxt.replace(" และ ",", ");
   const thMon=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];const dh=["จ","อ","พ","พฤ","ศ","ส","อา"];
-  const P=n=>String(n).padStart(2,"0");const recByDate={};(DATA.logs||[]).forEach(L=>{if(L.date)recByDate[L.date]=(recByDate[L.date]||0)+1;});
+  const P=n=>String(n).padStart(2,"0");const recByDate={};(DATA.logs||[]).forEach(L=>{if(L.date&&L.status!=='deleted')recByDate[L.date]=(recByDate[L.date]||0)+1;});
   $("calMonths").innerHTML=months.map(([yy,mm])=>{const first=new Date(yy,mm,1);const start=(first.getDay()+6)%7;const dim=new Date(yy,mm+1,0).getDate();let cells="";for(let i=0;i<start;i++)cells+=`<div class="cald dim"></div>`;
     for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const special=MS.has(ser);const cls=["cald","clk"];if(off)cls.push("off");if(special)cls.push("ms");const dstr=P(d)+"/"+P(mm+1)+"/"+yy;const rec=recByDate[dstr]||0;if(rec)cls.push("hasrec");const mk=off?(special?"หยุดพิเศษ":"หยุด"):"";cells+=`<div class="${cls.join(" ")}" data-date="${dstr}"><div class="dn">${d}</div><div class="mk">${mk}</div>${rec?`<div class="calrec">${rec}</div>`:""}</div>`;}
     return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");
   $("calMonths").querySelectorAll("[data-date]").forEach(el=>el.addEventListener("click",()=>openDayView(el.dataset.date)));}
 /* คลิกวันในปฏิทิน → ดูงานที่บันทึกวันนั้น */
-function openDayView(dstr){const logs=(DATA.logs||[]).filter(L=>L.date===dstr).sort((a,b)=>(b.ts||0)-(a.ts||0));
+function openDayView(dstr){const logs=(DATA.logs||[]).filter(L=>L.date===dstr&&L.status!=='deleted').sort((a,b)=>(b.ts||0)-(a.ts||0));
   $("dvTitle").textContent="งานที่บันทึก · "+dstr;
   $("dvBody").innerHTML=logs.length?logs.map(L=>{const ap=L.status==='approved';return `<div class="dvrow"><div class="dvmain"><div class="dvtask">${escapeHtml(L.machineName||"")} — ${escapeHtml(L.taskName||"")}</div><div class="dvmeta">👤 ${escapeHtml(L.by||"—")} · 👥 ${L.labor??"—"} คน${L.note?" · 📝 "+escapeHtml(L.note):""}</div></div><div class="dvpct"><b style="color:${ap?'var(--green)':'var(--amber)'}">${(+L.prog||0)}%</b></div><div class="dvst"><span class="lg-btn ${ap?'appr':'pend'}" style="cursor:default">${ap?'✓ ตรวจแล้ว':'⏳ รอตรวจสอบ'}</span></div></div>`;}).join(""):'<div class="logempty">ไม่มีงานที่บันทึกในวันนี้</div>';
   $("dvScrim").classList.add("on");$("dvModal").classList.add("on");}

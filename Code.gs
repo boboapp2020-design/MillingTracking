@@ -186,6 +186,7 @@ function writeLogBook_(data) {
   var logs = (data.logs || []).slice().sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
   var rows = [head];
   logs.forEach(function (L) {
+    if (L.status === 'deleted') return; // log ที่ยกเลิกแล้ว (tombstone) ไม่แสดงใน LogBook
     rows.push([
       L.date || '', L.machineName || '', L.taskName || '', L.by || '',
       (L.labor == null ? '' : L.labor), (L.prog || 0) / 100, L.note || '',

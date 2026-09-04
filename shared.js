@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=48; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=49; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -78,6 +78,9 @@ function mergeLogs(remoteLogs){
     if(!R||!R.id)return;
     const L=byId[R.id];
     if(!L){DATA.logs.push(R);byId[R.id]=R;changed++;return;}   // log ใหม่จากเครื่องอื่น
+    // "ยกเลิกแล้ว" (deleted) = tombstone: ชนะทุกสถานะ และไม่ฟื้นคืน → ลบ log ที่ตรวจแล้วได้โดยทุกเครื่องลู่เข้าค่าเดียวกัน
+    if(L.status==="deleted")return;
+    if(R.status==="deleted"){Object.keys(L).forEach(function(k){delete L[k];});Object.keys(R).forEach(function(k){L[k]=R[k];});changed++;return;}
     // มีอยู่แล้ว → เอาเวอร์ชันใหม่กว่า · "ตรวจแล้ว" ชนะ "รอตรวจสอบ" เสมอ
     const approvedWins=(R.status==="approved"&&L.status!=="approved");
     const staleApproved=(L.status==="approved"&&R.status!=="approved");
@@ -93,8 +96,15 @@ function mergeLogs(remoteLogs){
 }
 /* ---- แหล่งความจริงของ % งาน = log ที่ "ตรวจแล้ว" ---- นำค่าที่อนุมัติแล้วไปเขียนลง task เสมอ (กัน % หายเวลา sync/merge) */
 function applyApprovedLogs(){if(!DATA||!Array.isArray(DATA.logs))return 0;const agg={};
-  DATA.logs.forEach(function(L){if(!L||L.status!=="approved"||!L.mid)return;const k=L.mid+"|"+L.ti;if(!agg[k])agg[k]={prog:0,ts:-1,labor:null,note:null};const a=agg[k];if((+L.prog||0)>a.prog)a.prog=+L.prog||0;if((L.ts||0)>a.ts){a.ts=L.ts||0;if(L.labor!=null&&L.labor!=="")a.labor=+L.labor;if(L.note!=null)a.note=L.note;}});
-  var changed=0;Object.keys(agg).forEach(function(k){const p=k.split("|"),m=machineById(p[0]),ti=+p[1];if(!m||!m.tasks||!m.tasks[ti])return;const t=m.tasks[ti],a=agg[k];const np=Math.max(+t.prog||0,a.prog);if(np!==(+t.prog||0)){t.prog=np;changed++;}if(a.labor!=null&&t.labor!==a.labor){t.labor=a.labor;changed++;}if(a.note!=null&&a.note!==""&&t.note!==a.note){t.note=a.note;changed++;}});
+  DATA.logs.forEach(function(L){if(!L||!L.mid)return;const k=L.mid+"|"+L.ti;
+    if(L.status==="deleted"){if(!agg[k])agg[k]={prog:0,ts:-1,labor:null,note:null,n:0,delNotes:[]};agg[k].delNotes.push(L.note||"");return;} // งานที่มี log ถูกยกเลิก → % ต้องคำนวณใหม่จากที่เหลือ (ลดลงได้)
+    if(L.status!=="approved")return;
+    if(!agg[k])agg[k]={prog:0,ts:-1,labor:null,note:null,n:0,delNotes:[]};const a=agg[k];a.n++;if((+L.prog||0)>a.prog)a.prog=+L.prog||0;if((L.ts||0)>a.ts){a.ts=L.ts||0;if(L.labor!=null&&L.labor!=="")a.labor=+L.labor;if(L.note!=null)a.note=L.note;}});
+  var changed=0;Object.keys(agg).forEach(function(k){const p=k.split("|"),m=machineById(p[0]),ti=+p[1];if(!m||!m.tasks||!m.tasks[ti])return;const t=m.tasks[ti],a=agg[k];
+    // มี log ยกเลิกแล้ว → % = ค่าสูงสุดของ log ที่ยังตรวจแล้วอยู่ (ถ้าไม่เหลือเลย = 0) · ไม่มี → % ไม่ลดลง (เหมือนเดิม)
+    const np=a.delNotes.length?a.prog:Math.max(+t.prog||0,a.prog);if(np!==(+t.prog||0)){t.prog=np;changed++;}
+    if(a.labor!=null&&t.labor!==a.labor){t.labor=a.labor;changed++;}if(a.note!=null&&a.note!==""&&t.note!==a.note){t.note=a.note;changed++;}
+    if(!a.n&&a.delNotes.length&&t.note&&a.delNotes.indexOf(t.note)>=0){t.note="";changed++;}}); // หมายเหตุที่มากับ log ที่ยกเลิก → ล้างออกด้วย
   return changed;}
 let DATA=normalizeData(load());applyApprovedLogs();
 let saveTimer=null;

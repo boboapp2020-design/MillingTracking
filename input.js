@@ -104,7 +104,7 @@ $("dReset").addEventListener("click",closeDrawer); // ปุ่มยกเล�
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("drawer").classList.contains("on"))closeDrawer();});
 
 /* ===== Log Book ===== */
-function renderLog(){const el=$("logList");if(!el)return;let logs=(DATA.logs||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+function renderLog(){const el=$("logList");if(!el)return;let logs=(DATA.logs||[]).filter(L=>L&&L.status!=='deleted').sort((a,b)=>(b.ts||0)-(a.ts||0)); // log ที่ยกเลิกแล้วไม่แสดง
   const pc=logs.filter(L=>L.status==='pending').length;const pcEl=$("logPend");if(pcEl)pcEl.textContent=pc?("· รอตรวจสอบ "+pc+" รายการ"):"";
   const fv=($("logFilter")||{}).value||"all";const q=(($("logSearch")||{}).value||"").trim().toLowerCase();
   if(fv!=="all")logs=logs.filter(L=>L.status===fv);
