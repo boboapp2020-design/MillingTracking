@@ -67,7 +67,7 @@ function actualAtSerial(ser){const s0=projectRange().min;const actNow=actualPct(
 function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.devicePixelRatio||1;const W=cv.clientWidth||900,H=270;cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
   const rng=projectRange();const s0=rng.min,s1=rng.max;const span=Math.max(1,s1-s0);const padL=38,padR=14,padT=14,padB=26;const pw=W-padL-padR,ph=H-padT-padB;
-  const css=getComputedStyle(document.documentElement);const cInk2=css.getPropertyValue("--ink2"),cLine=css.getPropertyValue("--line"),cBrand=css.getPropertyValue("--brand"),cGreen=css.getPropertyValue("--green");
+  const css=getComputedStyle(document.documentElement);const cInk2=css.getPropertyValue("--ink2"),cLine=css.getPropertyValue("--line"),cBrand=css.getPropertyValue("--brand"),cGreen=(css.getPropertyValue("--curve-act")||"#f57c00").trim(); // เส้นจริง = ส้มเข้ม ให้ต่างจากเส้นแผน (เขียวอมฟ้า) ชัดเจน
   const X=s=>padL+(s-s0)/span*pw,Y=v=>padT+(1-v/100)*ph;
   c.strokeStyle=cLine;c.lineWidth=1;c.fillStyle=cInk2;c.font="10px Sarabun,sans-serif";
   for(let v=0;v<=100;v+=25){const y=Y(v);c.beginPath();c.moveTo(padL,y);c.lineTo(W-padR,y);c.stroke();c.fillText(v+"%",6,y+3);}
@@ -76,11 +76,11 @@ function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.d
   c.lineWidth=2.4;c.strokeStyle=cBrand;c.beginPath();let f=true;for(let s=s0;s<=s1;s++){const x=X(s),y=Y(planPctUpTo(s));f?(c.moveTo(x,y),f=false):c.lineTo(x,y);}c.stroke();
   const actNow=actualPct();
   // actual line from snapshots if available, else single ramp to today
-  c.lineWidth=2.8;c.strokeStyle=cGreen;c.beginPath();
+  c.lineWidth=3.4;c.strokeStyle=cGreen;c.lineJoin="round";c.lineCap="round";c.beginPath();
   const pts=[];if(SNAPS&&SNAPS.length){SNAPS.forEach(sp=>{if(sp.serial!=null&&sp.overall!=null&&sp.serial<TODAY_SERIAL)pts.push([sp.serial,sp.overall]);});pts.sort((a,b)=>a[0]-b[0]);}
   pts.push([Math.min(TODAY_SERIAL,s1),actNow]); // ปลายเส้นจบที่ค่าจริงสด ณ วันนี้เสมอ (ไม่ค้างที่ snapshot เก่า)
   c.moveTo(X(s0),Y(0));pts.forEach(p=>c.lineTo(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1])));c.stroke();
-  c.fillStyle=cGreen;pts.forEach((p,i)=>{c.beginPath();c.arc(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1]),i===pts.length-1?4.5:3.5,0,7);c.fill();});
+  pts.forEach((p,i)=>{const px=X(Math.max(s0,Math.min(s1,p[0]))),py=Y(p[1]);c.beginPath();c.arc(px,py,i===pts.length-1?5.5:4,0,7);c.fillStyle="#fff";c.fill();c.lineWidth=2.2;c.strokeStyle=cGreen;c.stroke();}); // จุดขาวขอบส้ม อ่านง่ายบนพื้นแผน
   if(TODAY_SERIAL>=s0&&TODAY_SERIAL<=s1){const x=X(TODAY_SERIAL);c.setLineDash([4,4]);c.strokeStyle=cInk2;c.lineWidth=1.4;c.beginPath();c.moveTo(x,padT);c.lineTo(x,padT+ph);c.stroke();c.setLineDash([]);}
   if(hoverX!=null&&hoverX>=padL&&hoverX<=W-padR){const sr=Math.max(s0,Math.min(s1,Math.round(s0+(hoverX-padL)/pw*span)));const x=X(sr);
     const planV=planPctUpTo(sr),actV=actualAtSerial(sr);
@@ -110,9 +110,10 @@ function closeDetail(){$("dtScrim").classList.remove("on");$("detail").classList
 function renderCalendar(){const months=[[2026,8],[2026,9],[2026,10]];const MS=HOLIDAYS; // แหล่งเดียวกับสูตรคำนวณ (shared.js)
   const holTxt=[...HOLIDAYS].sort((a,b)=>a-b).map(s=>fmtTH(s).slice(0,5)).join(" และ ");const ls=$("legSpecial");if(ls)ls.textContent="หยุดพิเศษ "+holTxt;const fh=$("footHol");if(fh)fh.textContent=holTxt.replace(" และ ",", ");
   const thMon=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];const dh=["จ","อ","พ","พฤ","ศ","ส","อา"];
+  const todayOk=actualPct()>=planPctUpTo(TODAY_SERIAL)-0.05; // วันนี้ได้ตามเป้าสะสมไหม (เกณฑ์เดียวกับป้าย % ใต้รถ) → ขอบเขียว/แดง
   const P=n=>String(n).padStart(2,"0");const recByDate={};(DATA.logs||[]).forEach(L=>{if(L.date&&L.status!=='deleted')recByDate[L.date]=(recByDate[L.date]||0)+1;});
   $("calMonths").innerHTML=months.map(([yy,mm])=>{const first=new Date(yy,mm,1);const start=(first.getDay()+6)%7;const dim=new Date(yy,mm+1,0).getDate();let cells="";for(let i=0;i<start;i++)cells+=`<div class="cald dim"></div>`;
-    for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const special=MS.has(ser);const cls=["cald","clk"];if(off)cls.push("off");if(special)cls.push("ms");const dstr=P(d)+"/"+P(mm+1)+"/"+yy;const rec=recByDate[dstr]||0;if(rec)cls.push("hasrec");const mk=off?(special?"หยุดพิเศษ":"หยุด"):"";cells+=`<div class="${cls.join(" ")}" data-date="${dstr}"><div class="dn">${d}</div><div class="mk">${mk}</div>${rec?`<div class="calrec">${rec}</div>`:""}</div>`;}
+    for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);const ser=dToSerial(dt);const off=isHoliday(dt);const special=MS.has(ser);const cls=["cald","clk"];if(off)cls.push("off");if(special)cls.push("ms");const dstr=P(d)+"/"+P(mm+1)+"/"+yy;const rec=recByDate[dstr]||0;if(rec)cls.push("hasrec");const isToday=ser===TODAY_SERIAL;if(isToday){cls.push("today");cls.push(todayOk?"ok":"behind");}const mk=(off?(special?"หยุดพิเศษ":"หยุด"):"")+(isToday?(off?" · ":"")+"วันนี้":"");cells+=`<div class="${cls.join(" ")}" data-date="${dstr}"><div class="dn">${d}</div><div class="mk">${mk}</div>${rec?`<div class="calrec">${rec}</div>`:""}</div>`;}
     return `<div><div style="font-weight:700;margin-bottom:6px">${thMon[mm]} ${yy+543}</div><div class="calhead">${dh.map(x=>`<div>${x}</div>`).join("")}</div><div class="calgrid">${cells}</div></div>`;}).join("");
   $("calMonths").querySelectorAll("[data-date]").forEach(el=>el.addEventListener("click",()=>openDayView(el.dataset.date)));}
 /* คลิกวันในปฏิทิน → ดูงานที่บันทึกวันนั้น */
