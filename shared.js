@@ -63,7 +63,30 @@ function normalizeData(d){try{if(!d||!d.groups)return d;
     d.mig=5;
   }
 }catch(e){}return d;}
-function mergeLogs(remoteLogs){if(!Array.isArray(remoteLogs)||!Array.isArray(DATA.logs))return 0;const have={};DATA.logs.forEach(function(L){have[L.id]=1;});var added=0;remoteLogs.forEach(function(L){if(L&&L.id&&!have[L.id]){DATA.logs.push(L);added++;}});return added;}
+/* ---- รวม log แบบ convergent: ไม่ทับกัน · อัปเดตสถานะข้ามเครื่องได้ · ทุกเครื่องลู่เข้าค่าเดียวกัน ---- */
+function logRev(L){return Math.max(+L.reviewTs||0,+L.ts||0,+L.edited||0);}
+function mergeLogs(remoteLogs){
+  if(!Array.isArray(remoteLogs))return 0;
+  if(!Array.isArray(DATA.logs))DATA.logs=[];
+  const byId={};DATA.logs.forEach(function(L){if(L&&L.id)byId[L.id]=L;});
+  var changed=0;
+  remoteLogs.forEach(function(R){
+    if(!R||!R.id)return;
+    const L=byId[R.id];
+    if(!L){DATA.logs.push(R);byId[R.id]=R;changed++;return;}   // log ใหม่จากเครื่องอื่น
+    // มีอยู่แล้ว → เอาเวอร์ชันใหม่กว่า · "ตรวจแล้ว" ชนะ "รอตรวจสอบ" เสมอ
+    const approvedWins=(R.status==="approved"&&L.status!=="approved");
+    const staleApproved=(L.status==="approved"&&R.status!=="approved");
+    if(staleApproved)return;                                   // ของเราอนุมัติแล้ว ของเขาเก่ากว่า → ไม่ถอย
+    if(approvedWins||logRev(R)>logRev(L)){
+      const keepProg=Math.max(+L.prog||0,+R.prog||0);           // % ที่อนุมัติแล้วไม่ลดลง
+      Object.keys(R).forEach(function(k){L[k]=R[k];});
+      if(L.status==="approved")L.prog=keepProg;
+      changed++;
+    }
+  });
+  return changed;
+}
 /* ---- แหล่งความจริงของ % งาน = log ที่ "ตรวจแล้ว" ---- นำค่าที่อนุมัติแล้วไปเขียนลง task เสมอ (กัน % หายเวลา sync/merge) */
 function applyApprovedLogs(){if(!DATA||!Array.isArray(DATA.logs))return 0;const agg={};
   DATA.logs.forEach(function(L){if(!L||L.status!=="approved"||!L.mid)return;const k=L.mid+"|"+L.ti;if(!agg[k])agg[k]={prog:0,ts:-1,labor:null,note:null};const a=agg[k];if((+L.prog||0)>a.prog)a.prog=+L.prog||0;if((L.ts||0)>a.ts){a.ts=L.ts||0;if(L.labor!=null&&L.labor!=="")a.labor=+L.labor;if(L.note!=null)a.note=L.note;}});
@@ -116,14 +139,29 @@ function wireCommon(){
 /* ---- Google Sheet sync (Apps Script backend) — URL ฝังไว้ถาวร ผู้ใช้แก้ไม่ได้ ---- */
 const SYNC_URL="https://script.google.com/macros/s/AKfycbwz5JC3AsGW4SRS-suhTRwFi4Z1jQDV5VT1t7laGr08aoj8EFrXDmLxVr4dXxbcBnHU/exec";
 const SYNC_KEY="mlk_7Qx2F9pR4vT8nZ6bW3sK";   // ต้องตรงกับ SECRET ใน Code.gs
-let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;
+let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;let lastPullAt=0;
 function syncGet(extra){return syncUrl+"?key="+encodeURIComponent(SYNC_KEY)+(extra?"&"+extra:"")+"&t="+Date.now();}
 function setSyncBtn(state,msg){const b=$("btnSync");if(!b)return;const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
-function schedulePush(){if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1500);}
-async function pushRemote(){if(!syncUrl)return;setSyncBtn("busy");
-  try{const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})});
-    const j=await res.json();if(j&&j.ok){lastSync=new Date();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}else setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ");
+function persistLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}}
+function schedulePush(){if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1200);}
+/* push แบบ read-modify-write: ดึงของล่าสุดมารวมก่อนส่ง → ไม่ทับงานเครื่องอื่น (กันข้อมูลเปลี่ยนไปเปลี่ยนมา) */
+let pushing=false,pushAgain=false;
+async function pushRemote(){if(!syncUrl)return;
+  if(pushing){pushAgain=true;return;}                          // กันยิงซ้อน
+  pushing=true;setSyncBtn("busy");
+  try{
+    if(Date.now()-lastPullAt>4000){                             // เพิ่งดึงมาไม่ถึง 4 วิ ก็ไม่ต้องดึงซ้ำ (ประหยัดโควตา)
+      try{const r0=await fetch(syncGet());const j0=await r0.json();
+        if(j0&&j0.ok&&j0.data&&j0.data.groups){mergeLogs(j0.data.logs);applyApprovedLogs();}
+      }catch(e){}                                               // ดึงมารวมก่อน (ถ้าดึงไม่ได้ก็ยังส่งของเราไป)
+    }
+    DATA.updated=Date.now();
+    const res=await fetch(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})});
+    const j=await res.json();
+    if(j&&j.ok){lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
+    else setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ");
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้ · ข้อมูลถูกเก็บในเครื่องแล้ว");}
+  finally{pushing=false;if(pushAgain){pushAgain=false;setTimeout(pushRemote,400);}}
 }
 /* ---- popup แจ้งเตือนกลางจอ (แทน alert) ---- */
 function notify(title,sub,type){type=type||"ok";
@@ -158,19 +196,47 @@ async function saveSnapshot(){
   }catch(e){if(btn)btn.textContent=old;notify("เชื่อมต่อไม่ได้","ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่","err");}
 }
 async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetch(syncGet("snap=1"));const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
-async function pullRemote(silent,force){if(!syncUrl)return false;if(!silent)setSyncBtn("busy");
+/* กำลังกรอกข้อมูลอยู่ไหม — ห้าม re-render ทับสิ่งที่ผู้ใช้พิมพ์ค้างไว้ */
+function isEditing(){const d=$("drawer"),r=$("rvModal");return !!((d&&d.classList.contains("on"))||(r&&r.classList.contains("on")));}
+/* pull = รวมข้อมูลเสมอ ไม่เขียนทับของเครื่องตัวเอง (เดิม force ทับทิ้ง → งานหาย/เด้งกลับ) */
+let pulling=false;
+async function pullRemote(silent,force){if(!syncUrl)return false;
+  if(pulling)return false;pulling=true;lastPullAt=Date.now();
+  if(!silent)setSyncBtn("busy");
   try{const res=await fetch(syncGet());const j=await res.json();
-    if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;const localT=DATA.updated||0,remoteT=remote.updated||0;const localFresh=WAS_SEED;
-      if(force||remoteT>localT||localFresh){if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));DATA=normalizeData(remote);applyApprovedLogs();save();render();}
-      else{const added=mergeLogs(remote.logs);const applied=applyApprovedLogs();if(added||applied){save();if(typeof render==="function")render();}} // local ใหม่กว่า แต่ merge log จากชีท + apply ค่าที่ตรวจแล้ว (กัน log/% หาย)
-      lastSync=new Date();setSyncBtn("ok","ดึงข้อมูลจากชีทแล้ว "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));return true;}
+    if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;
+      var changed=0;
+      if(WAS_SEED){ // เครื่องนี้ยังไม่มีข้อมูลของตัวเอง → รับของชีทมาทั้งชุดได้อย่างปลอดภัย
+        if(!remote.pins)remote.pins=JSON.parse(JSON.stringify(DEFAULT_PINS));
+        DATA=normalizeData(remote);WAS_SEED=false;changed=1;
+      }else{
+        changed=mergeLogs(remote.logs); // รวม log แบบไม่ทับกัน (ของเราไม่หาย ของเขาเข้ามา)
+      }
+      changed+=applyApprovedLogs();      // % งาน = ผลลัพธ์จาก log ที่ตรวจแล้วเสมอ → ลู่เข้าค่าเดียวกันทุกเครื่อง
+      if(changed){persistLocal();if(!isEditing()&&typeof render==="function")render();}
+      lastSync=new Date();setSyncBtn("ok","ซิงค์ล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));return true;}
     setSyncBtn("err","ชีทยังไม่มีข้อมูล");return false;
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้");return false;}
+  finally{pulling=false;}
+}
+/* ---- ซิงค์สองทางแบบเรียลไทม์: ดึงมารวม แล้วส่งของเราขึ้นไป ---- */
+async function syncNow(silent){const ok=await pullRemote(silent);if(ok)await pushRemote();return ok;}
+let pollTimer=null;
+function startPolling(){
+  if(pollTimer)clearInterval(pollTimer);
+  pollTimer=setInterval(function(){
+    if(document.visibilityState!=="visible")return;   // แท็บซ่อนอยู่ ไม่ต้องยิง
+    if(navigator.onLine===false||pushing||isEditing())return;
+    pullRemote(true);
+  },15000);                                            // ดึงทุก 15 วิ = ใกล้เคียงเรียลไทม์ (สมดุลกับโควตา Apps Script)
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")pullRemote(true);});
+  window.addEventListener("online",function(){pullRemote(true);});
+  window.addEventListener("focus",function(){if(!isEditing())pullRemote(true);});
 }
 function wireSync(){
   const bSnap=$("btnSnap");if(bSnap)bSnap.addEventListener("click",saveSnapshot);
   const sDate=$("snapDate");if(sDate){const t=new Date();const q=n=>String(n).padStart(2,"0");const iso=t.getFullYear()+"-"+q(t.getMonth()+1)+"-"+q(t.getDate());sDate.value=iso;sDate.max=iso;sDate.min="2026-09-01";}
-  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); const ok=await pullRemote(false,true); if(ok&&typeof notify==="function")notify("ซิงค์สำเร็จ","ดึงข้อมูลล่าสุดจากชีทมาแสดงแล้ว"); });  // คลิก = ดึงข้อมูลจากชีทมาทับเสมอ (force)
+  const bSync=$("btnSync");if(bSync)bSync.addEventListener("click",async()=>{ setSyncBtn("busy"); const ok=await syncNow(false); if(ok&&typeof notify==="function")notify("ซิงค์สำเร็จ","รวมข้อมูลกับชีทเรียบร้อย ทุกเครื่องตรงกันแล้ว"); });  // คลิก = ซิงค์สองทาง (รวม ไม่ทับ)
 }
 /* ---- cane-truck race: วิ่งตาม % งานซ่อมรวมทั้งแผนก เข้าเส้นชัยที่ 100% ---- */
 function renderRace(){const t=$("truck");if(!t)return;
@@ -195,4 +261,5 @@ function fitPage(){const app=$("app");if(!app)return;const vw=document.documentE
 function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout(window._fit);window._fit=setTimeout(fitPage,60);});window.addEventListener("load",fitPage);
   try{new ResizeObserver(()=>fitPage()).observe($("app"));}catch(e){}}
 /* boot — call after the page defines render() */
-function boot(){wireCommon();wireSync();render();save();setupFit();setSyncBtn("busy");pullRemote(true).finally(()=>{syncReady=true;});}
+function boot(){wireCommon();wireSync();render();save();setupFit();setSyncBtn("busy");
+  pullRemote(true).finally(()=>{syncReady=true;startPolling();});}
