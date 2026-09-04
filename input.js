@@ -43,7 +43,12 @@ function miniHTML_old(m){const a=machineActual(m),mh=machineMandays(m);
 const STLABEL={done:"เสร็จแล้ว",prog:"กำลังทำ",todo:"ยังไม่เริ่ม"};
 function pendingFor(mid,ti){return (DATA.logs||[]).find(L=>L.mid===mid&&L.ti===ti&&L.status==='pending');}
 function daysLine(t,i){const tgt=t.days;const used=consumedDays(curMid,i);
-  if(tgt==null)return `<div class="tc-dates">🗓️ ไม่ได้ระบุจำนวนวัน</div>`;
+  if(tgt==null){ // หมุด/รายการที่ไม่มีจำนวนวัน (เช่น วัสดุเข้า) → โชว์วันกำหนดถึงแทน (น้ำหนัก 0 ไม่นับใน %)
+    const F=s=>{const d=sd(s),P=n=>String(n).padStart(2,"0");return P(d.getDate())+"/"+P(d.getMonth()+1)+"/"+d.getFullYear();};
+    const ic=/วัสดุ|ถึงมิตรลาว/.test((t.name||"")+" "+(t.note||""))?"📦":"🗓️";const tag=t.note?` · ${escapeHtml(t.note)}`:"";
+    if(t.start==null&&t.finish==null)return `<div class="tc-dates">${ic} ยังไม่กำหนดวัน${tag}</div>`;
+    const a=t.start??t.finish,b=t.finish??t.start;
+    return `<div class="tc-dates">${ic} ${a===b?`กำหนดถึง <b>${F(a)}</b>`:`ช่วง <b>${F(a)}</b> – <b>${F(b)}</b>`}${tag}</div>`;}
   const rem=tgt-used;const col=rem<0?"var(--red)":(rem===0?"var(--amber)":"var(--brand2)");
   return `<div class="tc-dates">🗓️ ต้องใช้ <b>${tgt}</b> วัน · เหลือ <b style="color:${col}">${rem}</b> วัน${used>0?` <span style="opacity:.6">(ใช้ไป ${used})</span>`:''}</div>`;}
 function snapDateStr(){const s=$("snapDate");if(s&&s.value){const q=s.value.split("-");return q[2]+"/"+q[1]+"/"+q[0];}const t=new Date();const P=n=>String(n).padStart(2,"0");return P(t.getDate())+"/"+P(t.getMonth()+1)+"/"+t.getFullYear();}
