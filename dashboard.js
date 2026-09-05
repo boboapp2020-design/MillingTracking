@@ -80,8 +80,7 @@ function drawCurve(hoverX){const cv=$("scurve");if(!cv)return;const dpr=window.d
   c.lineWidth=3.4;c.strokeStyle=cGreen;c.lineJoin="round";c.lineCap="round";c.beginPath();
   const pts=[];if(SNAPS&&SNAPS.length){SNAPS.forEach(sp=>{if(sp.serial!=null&&sp.overall!=null&&sp.serial<TODAY_SERIAL)pts.push([sp.serial,sp.overall]);});pts.sort((a,b)=>a[0]-b[0]);}
   pts.push([Math.min(TODAY_SERIAL,s1),actNow]); // ปลายเส้นจบที่ค่าจริงสด ณ วันนี้เสมอ (ไม่ค้างที่ snapshot เก่า)
-  c.moveTo(X(s0),Y(0));pts.forEach(p=>c.lineTo(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1])));c.stroke();
-  pts.forEach((p,i)=>{const px=X(Math.max(s0,Math.min(s1,p[0]))),py=Y(p[1]);c.beginPath();c.arc(px,py,i===pts.length-1?5.5:4,0,7);c.fillStyle="#fff";c.fill();c.lineWidth=2.2;c.strokeStyle=cGreen;c.stroke();}); // จุดขาวขอบส้ม อ่านง่ายบนพื้นแผน
+  c.moveTo(X(s0),Y(0));pts.forEach(p=>c.lineTo(X(Math.max(s0,Math.min(s1,p[0]))),Y(p[1])));c.stroke(); // เส้นจริงล้วน ไม่มีจุดหมุด (ผู้ใช้สั่ง)
   if(TODAY_SERIAL>=s0&&TODAY_SERIAL<=s1){const x=X(TODAY_SERIAL);c.setLineDash([4,4]);c.strokeStyle=cInk2;c.lineWidth=1.4;c.beginPath();c.moveTo(x,padT);c.lineTo(x,padT+ph);c.stroke();c.setLineDash([]);}
   if(hoverX!=null&&hoverX>=padL&&hoverX<=W-padR){const sr=Math.max(s0,Math.min(s1,Math.round(s0+(hoverX-padL)/pw*span)));const x=X(sr);
     const planV=planPctUpTo(sr),actV=actualAtSerial(sr);
