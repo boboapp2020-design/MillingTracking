@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=67; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=68; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -189,13 +189,32 @@ function rankingData(){const total=totalMandays();const byTask={};
   const rows=Object.keys(people).map(n=>{const P=people[n];return {name:P.name,pct:P.pct,logs:P.logs,tasks:Object.keys(P.tasks).length,mh:P.mh};});
   if(unattributed>0.005)rows.push({name:"งานตั้งต้น (ไม่ระบุผู้บันทึก)",pct:unattributed,logs:0,tasks:0,mh:0,sys:true});
   return rows.sort((a,b)=>b.pct-a.pct||b.logs-a.logs);}
-function openRanking(){const md=$("rankModal"),sc=$("rankScrim"),body=$("rankBody");if(!md||!body)return;
-  const rows=rankingData();const sum=rows.reduce((s,r)=>s+r.pct,0);const ppl=rows.filter(r=>!r.sys);const max=ppl.length?Math.max(ppl[0].pct,0.0001):1;const medal=["🥇","🥈","🥉"];
-  const top=ppl[0];const sub=$("rankSub");if(sub)sub.textContent=top?`อันดับ 1: ${top.name} · ทำให้ภาพรวมขึ้น ${top.pct.toFixed(2)}% · ผลรวมทุกคน ${sum.toFixed(1)}% = % ภาพรวมทั้งหมด`:"ยังไม่มีรายการที่ตรวจแล้ว";
+let rankMode="pct"; // "pct" = ผลงานรวม (% ภาพรวมที่ทำให้ขึ้น) · "eff" = ประสิทธิภาพ (% ต่อ 100 man-hour ที่ใช้)
+function openRanking(){const md=$("rankModal"),sc=$("rankScrim");if(!md)return;renderRanking();sc.classList.add("on");md.classList.add("on");}
+function renderRanking(){const body=$("rankBody");if(!body)return;const medal=["🥇","🥈","🥉"];
+  const rows=rankingData();rows.forEach(r=>r.eff=(r.mh>0?r.pct/r.mh*100:null)); // %/100 man-hour = ทำ % ได้กี่จุด ต่อแรงงาน 100 ชม.
+  const sumPct=rows.reduce((s,r)=>s+r.pct,0);
+  const toggle=`<div class="rk-modes"><button class="rkm ${rankMode==='pct'?'on':''}" data-m="pct">🏆 ผลงานรวม (%)</button><button class="rkm ${rankMode==='eff'?'on':''}" data-m="eff">⚡ ประสิทธิภาพ (%/100ชม.)</button></div>`;
+  let list,max,top,subTxt;
+  if(rankMode==="eff"){
+    list=rows.filter(r=>!r.sys&&r.eff!=null).sort((a,b)=>b.eff-a.eff);
+    max=list.length?Math.max(list[0].eff,0.0001):1;top=list[0];
+    subTxt=top?`ประสิทธิภาพสูงสุด: ${top.name} · ${top.eff.toFixed(2)}% ต่อ 100 man-hour (ทำ ${top.pct.toFixed(2)}% จาก ${top.mh} ชม.)`:"ยังไม่มีข้อมูล";
+  }else{
+    list=rows.slice().sort((a,b)=>b.pct-a.pct);
+    const ppl=rows.filter(r=>!r.sys);max=ppl.length?Math.max(ppl[0].pct,0.0001):1;top=ppl.sort((a,b)=>b.pct-a.pct)[0];
+    subTxt=top?`อันดับ 1: ${top.name} · ทำให้ภาพรวมขึ้น ${top.pct.toFixed(2)}% · ผลรวมทุกคน ${sumPct.toFixed(1)}% = % ภาพรวมทั้งหมด`:"ยังไม่มีรายการที่ตรวจแล้ว";
+  }
+  const sub=$("rankSub");if(sub)sub.textContent=subTxt;
   let rank=0;
-  body.innerHTML=rows.length?rows.map(r=>{if(r.sys)return `<div class="rk-row sys"><div class="rk-no">⚙️</div><div class="rk-main"><div class="rk-name">${escapeHtml(r.name)}</div><div class="rk-bar"><i style="width:${Math.max(2,r.pct/max*100).toFixed(1)}%"></i></div><div class="rk-meta">งานที่ตั้งเสร็จไว้ก่อนเริ่มใช้ระบบ (ไม่มีผู้บันทึก)</div></div><div class="rk-pct num">+${r.pct.toFixed(2)}<small>%</small></div></div>`;
-    const i=rank++;return `<div class="rk-row ${i<3?'top'+(i+1):''}"><div class="rk-no">${medal[i]||(i+1)}</div><div class="rk-main"><div class="rk-name">${escapeHtml(r.name)}</div><div class="rk-bar"><i style="width:${Math.max(2,r.pct/max*100).toFixed(1)}%"></i></div><div class="rk-meta">${r.logs} รายการ · ${r.tasks} งาน · ${r.mh} man-hour</div></div><div class="rk-pct num">+${r.pct.toFixed(2)}<small>%</small></div></div>`;}).join(""):'<div class="logempty">ยังไม่มีรายการที่ “ตรวจแล้ว” — อนุมัติรายการในสมุดบันทึกก่อน จึงจะจัดอันดับได้</div>';
-  sc.classList.add("on");md.classList.add("on");}
+  const rowsHTML=list.length?list.map(r=>{const isSys=r.sys;
+    const val=rankMode==="eff"?r.eff:r.pct;const barPct=rankMode==="eff"?(r.eff/max*100):(r.pct/max*100);
+    const bigNum=rankMode==="eff"?`${r.eff.toFixed(2)}<small>%/100ชม.</small>`:`+${r.pct.toFixed(2)}<small>%</small>`;
+    const meta=isSys?"งานที่ตั้งเสร็จไว้ก่อนเริ่มใช้ระบบ (ไม่มีผู้บันทึก)":`${r.logs} รายการ · ${r.tasks} งาน · ${r.mh} man-hour${r.eff!=null?` · ⚡ ${r.eff.toFixed(2)}%/100ชม.`:""}`;
+    const no=isSys?"⚙️":(medal[rank]||(rank+1));if(!isSys)rank++;
+    return `<div class="rk-row ${isSys?'sys':(rank<=3&&!isSys?'top'+rank:'')}"><div class="rk-no">${no}</div><div class="rk-main"><div class="rk-name">${escapeHtml(r.name)}</div><div class="rk-bar"><i style="width:${Math.max(2,barPct).toFixed(1)}%"></i></div><div class="rk-meta">${meta}</div></div><div class="rk-pct num">${bigNum}</div></div>`;}).join(""):'<div class="logempty">ยังไม่มีรายการที่ “ตรวจแล้ว” — อนุมัติรายการในสมุดบันทึกก่อน จึงจะจัดอันดับได้</div>';
+  body.innerHTML=toggle+rowsHTML;
+  body.querySelectorAll(".rkm").forEach(b=>b.addEventListener("click",()=>{rankMode=b.dataset.m;renderRanking();}));}
 function closeRanking(){const md=$("rankModal"),sc=$("rankScrim");if(md)md.classList.remove("on");if(sc)sc.classList.remove("on");}
 
 /* ===== ส่งออก Excel (.xlsx) โดยไม่พึ่ง library: ไฟล์ .xlsx = zip (store) ของ XML ขั้นต่ำ ===== */

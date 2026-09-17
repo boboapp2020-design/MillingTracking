@@ -31,7 +31,9 @@ let curMid=null;
 function openDrawer(mid){if(editPins)return;curMid=mid;const m=machineById(mid);if(!m)return;const g=groupOf(m);
   $("dTitle").innerHTML=escapeHtml(m.name)+(machineStatus(m)==='done'?' <span class="succ-badge">✓ Success 100%</span>':'');$("dSub").textContent=g.name+" · "+m.tasks.length+" งาน";
   const ow=$("dOwner");fillRecorders(ow);ow.value=recorderByName(m.owner)?m.owner:"";ow.classList.remove("req-err");ow.onchange=()=>{m.owner=ow.value;ow.classList.remove("req-err");scheduleSave();};
-  renderTasks();$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
+  renderTasks();updateDoneBtn(m);$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");}
+/* งานเสร็จครบแล้ว → ปุ่มบันทึกเป็นสีเทาจาง กดไม่ได้ (ไม่มีอะไรให้บันทึกเพิ่ม) */
+function updateDoneBtn(m){const btn=$("dDone");if(!btn)return;const done=machineStatus(m)==='done';btn.disabled=done;btn.classList.toggle("isdone",done);btn.textContent=done?"✓ งานเสร็จแล้ว":"✓ บันทึก / เสร็จสิ้น";}
 function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");curMid=null;renderDiagram();renderMachineList();}
 function dmy(serial){const s=isoOf(serial);if(!s)return "—";const p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
 function wtCell(t,m,total){if(manhour(t)===0)return '<span style="color:var(--amber)">—</span><br><span style="opacity:.55;font-size:10px">ยังไม่ระบุ</span>';
@@ -87,6 +89,7 @@ function renderTasks(){const m=machineById(curMid);
 /* RECORDERS (รายชื่อ+PIN) และ recorderByName อยู่ใน shared.js — ใช้ร่วมกับ Ranking บน Dashboard */
 function fillRecorders(sel){if(!sel||sel.dataset.filled)return;RECORDERS.forEach(r=>{const o=document.createElement("option");o.value=r.name;o.textContent=r.name;sel.appendChild(o);});sel.dataset.filled="1";}
 function submitDrafts(){const m=machineById(curMid);if(!m){closeDrawer();return;}
+  if(machineStatus(m)==='done'){closeDrawer();return;} // งานเสร็จครบแล้ว ไม่มีอะไรให้บันทึก
   const ow=$("dOwner");const who=((ow&&ow.value)||m.owner||"").trim();const rec=recorderByName(who); // บังคับเลือกชื่อผู้บันทึกจากรายชื่อ
   if(!rec){if(ow){ow.value="";ow.classList.add("req-err");ow.focus();ow.scrollIntoView({block:"center"});}notify("ต้องเลือกชื่อผู้บันทึก","กรุณาเลือก “ชื่อผู้บันทึก” จากรายชื่อก่อนกดบันทึกทุกครั้ง","err");return;}
   m.owner=rec.name;
