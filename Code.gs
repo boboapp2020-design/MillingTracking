@@ -55,10 +55,17 @@ function doPost(e) {
       return json_({ ok: true, savedAt: new Date().toISOString() });
     }
     if (body && body.data && body.data.groups) {
-      setState_(body.data);
-      writeTable_(body.data);
-      writeLogBook_(body.data);
-      return json_({ ok: true, savedAt: new Date().toISOString() });
+      // ===== merge ฝั่งเซิร์ฟเวอร์: กันเครื่องที่ส่งข้อมูลเก่ามาเขียนทับ log ใหม่ของเครื่องอื่น (ข้อมูลเคยหาย v<69) =====
+      var lock = LockService.getScriptLock();
+      try { lock.waitLock(15000); } catch (le) {}
+      var merged;
+      try {
+        merged = mergeState_(getState_(), body.data);
+        setState_(merged);
+        writeTable_(merged);
+        writeLogBook_(merged);
+      } finally { try { lock.releaseLock(); } catch (le2) {} }
+      return json_({ ok: true, savedAt: new Date().toISOString(), merged: true });
     }
     return json_({ ok: false, error: 'invalid payload' });
   } catch (err) {
@@ -107,6 +114,73 @@ function setState_(data) {
   var sh = ss.getSheetByName(STATE_SHEET);
   if (!sh) { sh = ss.insertSheet(STATE_SHEET); sh.hideSheet(); }
   sh.getRange('A1').setValue(JSON.stringify(data));
+}
+
+/* ===== merge state ฝั่งเซิร์ฟเวอร์ (แหล่งความจริงเดียว) =====
+   รวม log แบบไม่ทับกัน + ความคืบหน้าไม่ถอยหลัง → เครื่องที่ส่งของเก่ามาก็ทำให้ข้อมูลหายไม่ได้ */
+function logRev_(L) { return Math.max(+L.reviewTs || 0, +L.ts || 0, +L.edited || 0); }
+function mergeLogs_(aLogs, bLogs) {
+  var byId = {}, order = [];
+  function put(L) {
+    if (!L || !L.id) return;
+    var cur = byId[L.id];
+    if (!cur) { byId[L.id] = L; order.push(L.id); return; }
+    if (cur.status === 'deleted') return;                 // tombstone ชนะและไม่ฟื้น
+    if (L.status === 'deleted') { byId[L.id] = L; return; }
+    var approvedWins = (L.status === 'approved' && cur.status !== 'approved');
+    var staleApproved = (cur.status === 'approved' && L.status !== 'approved');
+    if (staleApproved) return;                             // ของเดิมอนุมัติแล้ว ของใหม่เก่ากว่า → ไม่ถอย
+    if (approvedWins || logRev_(L) > logRev_(cur)) {
+      var keepProg = Math.max(+cur.prog || 0, +L.prog || 0);
+      if (L.status === 'approved') L.prog = keepProg;
+      byId[L.id] = L;
+    }
+  }
+  (aLogs || []).forEach(put);
+  (bLogs || []).forEach(put);
+  return order.map(function (id) { return byId[id]; });
+}
+function applyApprovedToBase_(d) {
+  var agg = {};
+  (d.logs || []).forEach(function (L) {
+    if (!L || L.status !== 'approved' || !L.mid) return;
+    var k = L.mid + '|' + L.ti, p = Math.max(0, Math.min(100, +L.prog || 0));
+    if (!(k in agg) || p > agg[k]) agg[k] = p;
+  });
+  (d.groups || []).forEach(function (g) {
+    (g.machines || []).forEach(function (m) {
+      (m.tasks || []).forEach(function (t, i) {
+        var k = m.id + '|' + i;
+        if (k in agg) { var np = Math.max(+t.prog || 0, agg[k]); if (np !== (+t.prog || 0)) t.prog = np; }
+      });
+    });
+  });
+}
+function mergeState_(stored, incoming) {
+  if (!stored || !stored.groups) return incoming;
+  if (!incoming || !incoming.groups) return stored;
+  var base = incoming;                                     // โครงสร้าง/ชื่อผู้บันทึกล่าสุดจากเครื่องที่ส่งมา
+  var sMap = {};
+  (stored.groups || []).forEach(function (g) { (g.machines || []).forEach(function (m) { sMap[m.id] = m; }); });
+  (base.groups || []).forEach(function (g) {
+    (g.machines || []).forEach(function (m) {
+      var sm = sMap[m.id]; if (!sm) return;
+      if ((!m.owner || !('' + m.owner).trim()) && sm.owner) m.owner = sm.owner;
+      (m.tasks || []).forEach(function (t, i) {
+        var st = (sm.tasks || [])[i]; if (!st) return;
+        var mp = Math.max(+t.prog || 0, +st.prog || 0);    // ความคืบหน้าไม่ถอยหลัง
+        if (mp !== (+t.prog || 0)) t.prog = mp;
+        if ((t.labor == null || t.labor === '') && st.labor != null) t.labor = st.labor;
+        if ((!t.note || t.note === '') && st.note) t.note = st.note;
+      });
+    });
+  });
+  base.logs = mergeLogs_(stored.logs, incoming.logs);       // รวม log ทั้งสองฝั่ง ไม่ทับกัน
+  applyApprovedToBase_(base);                               // % งาน = สูงสุดจาก log ที่ตรวจแล้ว (ทั้งสองฝั่ง)
+  base.mig = Math.max(+base.mig || 0, +stored.mig || 0);
+  base.updated = Math.max(+base.updated || 0, +stored.updated || 0, Date.now());
+  if (!base.pins && stored.pins) base.pins = stored.pins;
+  return base;
 }
 
 function serial_(s) {

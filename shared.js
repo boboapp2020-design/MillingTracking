@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=68; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=69; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -281,10 +281,15 @@ async function pushRemote(){if(!syncUrl)return;
   if(pushing){pushAgain=true;return;}                          // กันยิงซ้อน
   pushing=true;setSyncBtn("busy");
   try{
-    if(Date.now()-lastPullAt>4000){                             // เพิ่งดึงมาไม่ถึง 4 วิ ก็ไม่ต้องดึงซ้ำ (ประหยัดโควตา)
+    var mergedOk=(Date.now()-lastPullAt<=4000);                 // เพิ่งดึง+รวมมาไม่ถึง 4 วิ ถือว่ามีของล่าสุดแล้ว
+    if(!mergedOk){                                              // ต้องดึงของล่าสุดมารวมก่อนส่ง เพื่อไม่เขียนทับงานเครื่องอื่น
       try{const r0=await fetchT(syncGet(),null,25000);const j0=await r0.json();
-        if(j0&&j0.ok&&j0.data&&j0.data.groups){mergeLogs(j0.data.logs);applyApprovedLogs();}
-      }catch(e){}                                               // ดึงมารวมก่อน (ถ้าดึงไม่ได้ก็ยังส่งของเราไป)
+        if(j0&&j0.ok&&j0.data&&j0.data.groups){mergeLogs(j0.data.logs);applyApprovedLogs();mergedOk=true;}
+      }catch(e){mergedOk=false;}
+    }
+    if(!mergedOk){                                              // ดึงล่าสุดไม่ได้ → "ห้ามส่งทับ" กันข้อมูลเครื่องอื่นหาย (จะลองใหม่รอบถัดไป)
+      setSyncBtn("offline","ดึงข้อมูลล่าสุดไม่ได้ · ยังไม่ส่งขึ้นชีท (กันข้อมูลทับกัน) จะลองใหม่อัตโนมัติ");
+      pushing=false;if(pushAgain){pushAgain=false;setTimeout(pushRemote,1500);}else setTimeout(function(){if(!isEditing())pushRemote();},4000);return;
     }
     DATA.updated=Date.now();
     // ส่ง % รวมสะสมที่เว็บคำนวณไปด้วย → ชีท "Summary" เอาไปเทียบกับค่าที่ชีทคำนวณเองด้วยสูตรในชีท
