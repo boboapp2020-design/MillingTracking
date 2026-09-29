@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=71; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=72; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -267,7 +267,7 @@ function exportExcel(){const total=totalMandays();const today=thaiDMY();const P2
 /* ---- Google Sheet sync (Apps Script backend) — URL ฝังไว้ถาวร ผู้ใช้แก้ไม่ได้ ---- */
 const SYNC_URL="https://script.google.com/macros/s/AKfycbwz5JC3AsGW4SRS-suhTRwFi4Z1jQDV5VT1t7laGr08aoj8EFrXDmLxVr4dXxbcBnHU/exec";
 const SYNC_KEY="mlk_7Qx2F9pR4vT8nZ6bW3sK";   // ต้องตรงกับ SECRET ใน Code.gs
-let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;let lastPullAt=0;
+let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;let lastPullAt=0;let dirty=false; // มีข้อมูลในเครื่องที่ยังไม่ได้อัปขึ้นชีท → ลองส่งเองเรื่อยๆ จนสำเร็จ (กัน endpoint สะดุดแล้วข้อมูลค้าง)
 function syncGet(extra){return syncUrl+"?key="+encodeURIComponent(SYNC_KEY)+(extra?"&"+extra:"")+"&t="+Date.now();}
 /* fetch แบบมีเวลาหมด — ถ้า Apps Script ค้าง ต้องไม่ล็อกการซิงค์ทั้งเครื่องไว้ตลอด (เดิม pulling=true ค้างจนกว่าจะ reload) */
 function fetchT(url,opts,ms){const ac=("AbortController" in window)?new AbortController():null;const o=Object.assign({},opts||{});if(ac)o.signal=ac.signal;const tm=ac?setTimeout(()=>ac.abort(),ms||25000):null;return fetch(url,o).finally(()=>{if(tm)clearTimeout(tm);});}
@@ -282,7 +282,7 @@ async function fetchRetry(url,opts,ms,tries){tries=tries||3;var err;
 function setSyncBtn(state,msg){const b=$("btnSync");if(b){const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
   const v=$("verTag");if(v){const t=lastSync?lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"}):null;v.textContent="v"+APP_VER+(state==="busy"?" · กำลังซิงค์…":state==="offline"?" · ออฟไลน์":state==="err"?" · ซิงค์ไม่สำเร็จ":t?" · ซิงค์ "+t:" · ยังไม่ซิงค์");v.style.color=(state==="err"||state==="offline")?"var(--red)":"";}} // ระหว่างดึงข้อมูลให้บอกว่า "กำลังซิงค์…" (เดิมขึ้น "ยังไม่ซิงค์" ตอนเปิดหน้า ทำให้เข้าใจผิด) // ป้ายเวอร์ชัน+เวลาซิงค์ ให้เห็นทันทีว่าเครื่องนี้ตรงกับเครื่องอื่นไหม
 function persistLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}}
-function schedulePush(){if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1200);}
+function schedulePush(){dirty=true;if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1200);} // ทุกการแก้ในเครื่อง = dirty จนกว่าจะ push สำเร็จ
 /* push แบบ read-modify-write: ดึงของล่าสุดมารวมก่อนส่ง → ไม่ทับงานเครื่องอื่น (กันข้อมูลเปลี่ยนไปเปลี่ยนมา) */
 let pushing=false,pushAgain=false;
 async function pushRemote(){if(!syncUrl)return;
@@ -290,16 +290,16 @@ async function pushRemote(){if(!syncUrl)return;
   pushing=true;setSyncBtn("busy");
   try{
     if(Date.now()-lastPullAt>4000){                             // best-effort: ดึงมารวมก่อน (ประหยัดโควตา ถ้าเพิ่งดึง <4 วิ ก็ข้าม)
-      try{const r0=await fetchRetry(syncGet(),null,25000,2);const j0=await r0.json();
+      try{const r0=await fetchRetry(syncGet(),null,15000,3);const j0=await r0.json();
         if(j0&&j0.ok&&j0.data&&j0.data.groups){mergeLogs(j0.data.logs);applyApprovedLogs();}
       }catch(e){}                                               // ดึงไม่ได้ก็ส่งไปได้ — เซิร์ฟเวอร์ merge เองไม่มีทางทับหาย (Code.gs v69+)
     }
     DATA.updated=Date.now();
     // ส่ง % รวมสะสมที่เว็บคำนวณไปด้วย → ชีท "Summary" เอาไปเทียบกับค่าที่ชีทคำนวณเองด้วยสูตรในชีท
     try{DATA.summary={overall:+actualPct().toFixed(3),ver:APP_VER,asOf:thaiDMY()+" "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"})};}catch(e){}
-    const res=await fetchRetry(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})},45000,3);
+    const res=await fetchRetry(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})},40000,6);
     const j=await res.json();
-    if(j&&j.ok){lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
+    if(j&&j.ok){dirty=false;lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
     else setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ");
   }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้ · ข้อมูลถูกเก็บในเครื่องแล้ว");}
   finally{pushing=false;if(pushAgain){pushAgain=false;setTimeout(pushRemote,400);}}
@@ -344,7 +344,7 @@ let pulling=false;
 async function pullRemote(silent){if(!syncUrl)return false;
   if(pulling)return false;pulling=true;lastPullAt=Date.now();
   if(!silent)setSyncBtn("busy");
-  try{const res=await fetchRetry(syncGet(),null,25000,3);const j=await res.json();
+  try{const res=await fetchRetry(syncGet(),null,15000,4);const j=await res.json();
     if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;
       var changed=0;
       if(WAS_SEED){ // เครื่องนี้ยังไม่มีข้อมูลของตัวเอง → รับของชีทมาทั้งชุดได้อย่างปลอดภัย
@@ -365,10 +365,11 @@ async function syncNow(silent){const ok=await pullRemote(silent);if(ok)await pus
 let pollTimer=null;
 function startPolling(){
   if(pollTimer)clearInterval(pollTimer);
-  pollTimer=setInterval(function(){
+  pollTimer=setInterval(async function(){
     if(document.visibilityState!=="visible")return;   // แท็บซ่อนอยู่ ไม่ต้องยิง
     if(navigator.onLine===false||pushing||isEditing())return;
-    pullRemote(true);
+    await pullRemote(true);
+    if(dirty&&!pushing&&!isEditing())pushRemote();      // มีข้อมูลค้างยังไม่ขึ้นชีท → ลองส่งเองทุกรอบจนสำเร็จ (endpoint สะดุดก็ไม่ตกหล่น)
   },15000);                                            // ดึงทุก 15 วิ = ใกล้เคียงเรียลไทม์ (สมดุลกับโควตา Apps Script)
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")pullRemote(true);});
   window.addEventListener("online",function(){pullRemote(true);});
@@ -434,4 +435,6 @@ function setupFit(){fitPage();window.addEventListener("resize",()=>{clearTimeout
 /* boot — call after the page defines render() */
 function boot(){try{const q=new URLSearchParams(location.search);if(q.has("u")){q.delete("u");const s=q.toString();history.replaceState(null,"",location.pathname+(s?"?"+s:"")+location.hash);}}catch(e){} // ล้างเฉพาะ ?u= หลังอัปเดตอัตโนมัติ (คง param อื่น/#hash)
   wireCommon();wireSync();render();save();setupFit();setSyncBtn("busy");
-  pullRemote(true).finally(()=>{syncReady=true;startPolling();startUpdateCheck();});}
+  pullRemote(true).finally(()=>{syncReady=true;startPolling();startUpdateCheck();
+    if(!WAS_SEED){dirty=true;setTimeout(function(){if(!isEditing())pushRemote();},2500);} // เครื่องนี้มีข้อมูลของตัวเอง → reconcile ขึ้นชีท 1 ครั้งตอนเปิด (กันข้อมูลที่ค้างจากรอบก่อนไม่ขึ้น) · polling จะลองซ้ำจนสำเร็จ
+  });}
