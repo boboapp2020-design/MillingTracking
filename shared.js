@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=70; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=71; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -271,6 +271,14 @@ let syncUrl=SYNC_URL;let pushTimer=null;let lastSync=null;let syncReady=false;le
 function syncGet(extra){return syncUrl+"?key="+encodeURIComponent(SYNC_KEY)+(extra?"&"+extra:"")+"&t="+Date.now();}
 /* fetch แบบมีเวลาหมด — ถ้า Apps Script ค้าง ต้องไม่ล็อกการซิงค์ทั้งเครื่องไว้ตลอด (เดิม pulling=true ค้างจนกว่าจะ reload) */
 function fetchT(url,opts,ms){const ac=("AbortController" in window)?new AbortController():null;const o=Object.assign({},opts||{});if(ac)o.signal=ac.signal;const tm=ac?setTimeout(()=>ac.abort(),ms||25000):null;return fetch(url,o).finally(()=>{if(tm)clearTimeout(tm);});}
+/* Apps Script /exec สะดุดเป็นพักๆ (404/302/timeout ~20-30%) — ลองซ้ำอัตโนมัติก่อนยอมแพ้ เพื่อไม่ให้ขึ้น "ออฟไลน์" ทั้งที่ออนไลน์ · POST ซ้ำปลอดภัยเพราะเซิร์ฟเวอร์ merge idempotent */
+async function fetchRetry(url,opts,ms,tries){tries=tries||3;var err;
+  for(var i=0;i<tries;i++){
+    try{var r=await fetchT(url,opts,ms);if(r&&r.ok)return r;err=new Error("HTTP "+(r&&r.status));}
+    catch(e){err=e;}
+    if(i<tries-1)await new Promise(function(res){setTimeout(res,700+i*600);});
+  }
+  throw err||new Error("fetch failed");}
 function setSyncBtn(state,msg){const b=$("btnSync");if(b){const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
   const v=$("verTag");if(v){const t=lastSync?lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"}):null;v.textContent="v"+APP_VER+(state==="busy"?" · กำลังซิงค์…":state==="offline"?" · ออฟไลน์":state==="err"?" · ซิงค์ไม่สำเร็จ":t?" · ซิงค์ "+t:" · ยังไม่ซิงค์");v.style.color=(state==="err"||state==="offline")?"var(--red)":"";}} // ระหว่างดึงข้อมูลให้บอกว่า "กำลังซิงค์…" (เดิมขึ้น "ยังไม่ซิงค์" ตอนเปิดหน้า ทำให้เข้าใจผิด) // ป้ายเวอร์ชัน+เวลาซิงค์ ให้เห็นทันทีว่าเครื่องนี้ตรงกับเครื่องอื่นไหม
 function persistLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}}
@@ -282,14 +290,14 @@ async function pushRemote(){if(!syncUrl)return;
   pushing=true;setSyncBtn("busy");
   try{
     if(Date.now()-lastPullAt>4000){                             // best-effort: ดึงมารวมก่อน (ประหยัดโควตา ถ้าเพิ่งดึง <4 วิ ก็ข้าม)
-      try{const r0=await fetchT(syncGet(),null,25000);const j0=await r0.json();
+      try{const r0=await fetchRetry(syncGet(),null,25000,2);const j0=await r0.json();
         if(j0&&j0.ok&&j0.data&&j0.data.groups){mergeLogs(j0.data.logs);applyApprovedLogs();}
       }catch(e){}                                               // ดึงไม่ได้ก็ส่งไปได้ — เซิร์ฟเวอร์ merge เองไม่มีทางทับหาย (Code.gs v69+)
     }
     DATA.updated=Date.now();
     // ส่ง % รวมสะสมที่เว็บคำนวณไปด้วย → ชีท "Summary" เอาไปเทียบกับค่าที่ชีทคำนวณเองด้วยสูตรในชีท
     try{DATA.summary={overall:+actualPct().toFixed(3),ver:APP_VER,asOf:thaiDMY()+" "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"})};}catch(e){}
-    const res=await fetchT(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})},45000);
+    const res=await fetchRetry(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})},45000,3);
     const j=await res.json();
     if(j&&j.ok){lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
     else setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ");
@@ -328,7 +336,7 @@ async function saveSnapshot(){
     else{if(btn)btn.textContent=old;notify("บันทึกไม่สำเร็จ",((j&&j.error)||"ไม่ทราบสาเหตุ"),"err");}
   }catch(e){if(btn)btn.textContent=old;notify("เชื่อมต่อไม่ได้","ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่","err");}
 }
-async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetchT(syncGet("snap=1"),null,25000);const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
+async function fetchSnapshots(){if(!syncUrl)return null;try{const res=await fetchRetry(syncGet("snap=1"),null,25000,2);const j=await res.json();return (j&&j.ok&&j.snapshots)?j.snapshots:null;}catch(e){return null;}}
 /* กำลังกรอกข้อมูลอยู่ไหม — ห้าม re-render ทับสิ่งที่ผู้ใช้พิมพ์ค้างไว้ */
 function isEditing(){return !!document.querySelector(".drawer.on,.modal.on,.pinmodal.on");} // ทุกหน้าต่างที่เปิดอยู่ (ฟอร์ม/ตรวจ/PIN/drill-down/day view) ทั้ง 2 หน้า
 /* pull = รวมข้อมูลเสมอ ไม่เขียนทับของเครื่องตัวเอง (เดิม force ทับทิ้ง → งานหาย/เด้งกลับ) */
@@ -336,7 +344,7 @@ let pulling=false;
 async function pullRemote(silent){if(!syncUrl)return false;
   if(pulling)return false;pulling=true;lastPullAt=Date.now();
   if(!silent)setSyncBtn("busy");
-  try{const res=await fetchT(syncGet(),null,25000);const j=await res.json();
+  try{const res=await fetchRetry(syncGet(),null,25000,3);const j=await res.json();
     if(j&&j.ok&&j.data&&j.data.groups){const remote=j.data;
       var changed=0;
       if(WAS_SEED){ // เครื่องนี้ยังไม่มีข้อมูลของตัวเอง → รับของชีทมาทั้งชุดได้อย่างปลอดภัย
