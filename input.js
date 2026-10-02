@@ -107,8 +107,35 @@ function commitDrafts(who){const m=machineById(curMid);if(!m){closeDrawer();retu
       else{DATA.logs.push({id:"L"+Date.now()+"_"+i,mid:curMid,ti:i,taskName:t.name,machineName:m.name,by:who,prog,labor,note,date:snapDateStr(),ts:Date.now(),status:"pending"});}n++;}
     else if(pend){DATA.logs=DATA.logs.filter(L=>L!==pend);} // กลับเท่าเดิม → ถอนรายการ
   });
-  scheduleSave();renderLog();closeDrawer();
-  if(n)setTimeout(()=>notify("บันทึกสำเร็จ","ส่งเข้ารอตรวจสอบแล้ว "+n+" รายการ · % จะแสดงบนหมุด/Dashboard หลังผ่านการตรวจสอบ"),150);
+  save();renderLog();                                   // เก็บในเครื่องทันที (ไม่หายแม้เน็ตดับ)
+  if(!n){scheduleSave();closeDrawer();return;}          // ไม่มีอะไรเปลี่ยน
+  confirmSend(n);                                        // ส่งขึ้นชีททันที + รอยืนยันจริง ก่อนบอกว่าสำเร็จ
+}
+/* ส่งขึ้นชีททันทีหลังกดบันทึก แล้วแจ้งผล "จริง": ✅ ขึ้นชีทแล้ว หรือ ❌ ส่งไม่สำเร็จ (ข้อมูลยังอยู่ในเครื่อง + ปุ่มลองใหม่) — ไม่ปิดฟอร์มจนกว่าจะรู้ผล */
+async function confirmSend(n){
+  const btn=$("dDone");const old=btn?btn.textContent:"";
+  if(btn){btn.disabled=true;btn.textContent="⏳ กำลังส่งขึ้นชีท…";}
+  let ok=false,err="";
+  try{
+    dirty=true;
+    // รอผลไม่เกิน ~25 วินาที (ฟอร์มไม่ค้างนาน) · ถ้าเกินเวลา = แจ้งว่า "ยังไม่ขึ้นชีท" แล้วให้ polling ส่งต่อเบื้องหลังจนสำเร็จ
+    const race=(async()=>{
+      let w=0;while(pushing&&w<30){await new Promise(r=>setTimeout(r,500));w++;}   // รอ push ที่กำลังวิ่งอยู่ (เช่น polling) จบก่อน — ไม่งั้น pushRemote จะคืนทันทีโดยไม่ส่งของใหม่
+      dirty=true;                                       // ของที่เพิ่งบันทึกต้องไปกับรอบนี้แน่
+      await pushRemote();
+      return !dirty;                                    // pushRemote สำเร็จ → dirty=false
+    })();
+    const timeout=new Promise(r=>setTimeout(()=>r("timeout"),25000));
+    const res=await Promise.race([race,timeout]);
+    ok=(res===true);
+    if(res==="timeout")err="หมดเวลารอชีทตอบ";
+  }catch(e){err=String(e&&e.message||e);}
+  if(btn){btn.disabled=false;btn.textContent=old;}
+  if(ok){closeDrawer();notify("✅ บันทึกขึ้นชีทแล้ว","ส่งเข้ารอตรวจสอบ "+n+" รายการ · ทุกเครื่องจะเห็นรายการนี้ · % จะขึ้นหลังกด “ตรวจแล้ว”");}
+  else{
+    closeDrawer();
+    notify("⚠ เก็บในเครื่องแล้ว แต่ยังส่งขึ้นชีทไม่สำเร็จ","ข้อมูลไม่หาย · แอปจะลองส่งเองทุก 15 วินาทีจนสำเร็จ (ดูป้ายมุมบน “รอส่งขึ้นชีท” จะหายเมื่อสำเร็จ) · อย่าปิดแอปจนกว่าป้ายจะหาย"+(err?" · "+err:""),"err");
+  }
 }
 function refreshWeights(){const m=machineById(curMid);if(!m)return;
   $("taskBody").querySelectorAll(".tcard").forEach(card=>{const i=+card.dataset.i;const t=m.tasks[i];if(t){const w=card.querySelector('.tcw');if(w)w.textContent=manhour(t)===0?"—":taskWeightInJob(t,m).toFixed(1)+"%";}});refreshMini();}
