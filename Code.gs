@@ -55,22 +55,34 @@ function doPost(e) {
       return json_({ ok: true, savedAt: new Date().toISOString() });
     }
     if (body && body.data && body.data.groups) {
-      // ===== merge ฝั่งเซิร์ฟเวอร์: กันเครื่องที่ส่งข้อมูลเก่ามาเขียนทับ log ใหม่ของเครื่องอื่น (ข้อมูลเคยหาย v<69) =====
+      // ===== เส้นทางหลัก (เร็ว): lock เฉพาะ merge+เซฟ _state → POST ไม่ค้างคิวกัน =====
       var lock = LockService.getScriptLock();
-      try { lock.waitLock(15000); } catch (le) {}
+      try { lock.waitLock(20000); } catch (le) {}
       var merged;
       try {
         merged = mergeState_(getState_(), body.data);
-        setState_(merged);
-        writeTable_(merged);
-        writeLogBook_(merged);
+        setState_(merged);                       // เขียน JSON อย่างเดียว เร็ว (~1-2 วิ)
       } finally { try { lock.releaseLock(); } catch (le2) {} }
+      maybeWriteTables_(merged);                  // เขียนตารางอ่านง่าย (ช้า) นอก lock + จำกัดความถี่ ไม่ให้ POST หน่วง
       return json_({ ok: true, savedAt: new Date().toISOString(), merged: true });
     }
     return json_({ ok: false, error: 'invalid payload' });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
   }
+}
+
+/* เขียนตารางอ่านง่าย (ชีต1 + LogBook) แบบจำกัดความถี่ — ลดภาระ POST ให้เร็ว ไม่ชนคิวกัน
+   _state (ข้อมูลจริงที่แอปใช้) อัปเดตทุก POST อยู่แล้ว · ตารางคน-อ่านช้ากว่าได้ ≤30 วิ */
+function maybeWriteTables_(data) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var now = Date.now(), last = +(props.getProperty('tablesAt') || 0);
+    if (now - last < 30000) return;              // เพิ่งเขียนไม่ถึง 30 วิ → ข้าม
+    props.setProperty('tablesAt', String(now));
+    writeTable_(data);
+    writeLogBook_(data);
+  } catch (e) {}
 }
 
 function appendSnapshot_(s) {

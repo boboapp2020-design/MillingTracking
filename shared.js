@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=74; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=75; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -287,6 +287,7 @@ async function fetchRetry(url,opts,ms,tries){tries=tries||3;var err;
     if(i<tries-1)await new Promise(function(res){setTimeout(res,700+i*600);});
   }
   throw err||new Error("fetch failed");}
+function syncedRecently(){return lastSync&&(Date.now()-lastSync.getTime()<120000);} // ซิงค์สำเร็จภายใน 2 นาที → ความล้มเหลวชั่วคราวไม่ต้องขึ้นเตือน (ลองใหม่เงียบๆ)
 function setSyncBtn(state,msg){const b=$("btnSync");if(b){const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
   const v=$("verTag");if(v){const t=lastSync?lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"}):null;v.textContent="v"+APP_VER+(state==="busy"?" · กำลังซิงค์…":state==="offline"?" · ออฟไลน์":state==="err"?" · ซิงค์ไม่สำเร็จ":t?" · ซิงค์ "+t:" · ยังไม่ซิงค์");v.style.color=(state==="err"||state==="offline")?"var(--red)":"";}} // ระหว่างดึงข้อมูลให้บอกว่า "กำลังซิงค์…" (เดิมขึ้น "ยังไม่ซิงค์" ตอนเปิดหน้า ทำให้เข้าใจผิด) // ป้ายเวอร์ชัน+เวลาซิงค์ ให้เห็นทันทีว่าเครื่องนี้ตรงกับเครื่องอื่นไหม
 function persistLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}}
@@ -308,8 +309,8 @@ async function pushRemote(){if(!syncUrl)return;
     const res=await fetchRetry(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})},40000,6);
     const j=await res.json();
     if(j&&j.ok){dirty=false;lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
-    else setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ");
-  }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้ · ข้อมูลถูกเก็บในเครื่องแล้ว");}
+    else if(!syncedRecently())setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ"); // เพิ่งสำเร็จไม่นาน → เงียบไว้ ลองใหม่เอง ไม่ตื่นตูม
+  }catch(e){if(!syncedRecently())setSyncBtn("offline","เชื่อมต่อไม่เสถียร · ข้อมูลถูกเก็บในเครื่องแล้ว กำลังลองใหม่");}
   finally{pushing=false;if(pushAgain){pushAgain=false;setTimeout(pushRemote,400);}}
 }
 /* ---- popup แจ้งเตือนกลางจอ (แทน alert) ---- */
@@ -364,8 +365,8 @@ async function pullRemote(silent){if(!syncUrl)return false;
       changed+=applyApprovedLogs();      // % งาน = ผลลัพธ์จาก log ที่ตรวจแล้วเสมอ → ลู่เข้าค่าเดียวกันทุกเครื่อง
       if(changed){persistLocal();if(!isEditing()&&typeof render==="function")render();}
       lastSync=new Date();setSyncBtn("ok","ซิงค์ล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));return true;}
-    setSyncBtn("err","ชีทยังไม่มีข้อมูล");return false;
-  }catch(e){setSyncBtn("offline","เชื่อมต่ออินเทอร์เน็ตไม่ได้");return false;}
+    if(!syncedRecently())setSyncBtn("err","ชีทยังไม่มีข้อมูล");return false;
+  }catch(e){if(!syncedRecently())setSyncBtn("offline","เชื่อมต่อไม่เสถียร · กำลังลองใหม่");return false;}
   finally{pulling=false;}
 }
 /* ---- ซิงค์สองทางแบบเรียลไทม์: ดึงมารวม แล้วส่งของเราขึ้นไป ---- */
