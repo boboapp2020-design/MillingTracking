@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=75; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=76; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -289,9 +289,9 @@ async function fetchRetry(url,opts,ms,tries){tries=tries||3;var err;
   throw err||new Error("fetch failed");}
 function syncedRecently(){return lastSync&&(Date.now()-lastSync.getTime()<120000);} // ซิงค์สำเร็จภายใน 2 นาที → ความล้มเหลวชั่วคราวไม่ต้องขึ้นเตือน (ลองใหม่เงียบๆ)
 function setSyncBtn(state,msg){const b=$("btnSync");if(b){const map={off:"เชื่อมชีท",ok:"ซิงค์แล้ว",busy:"กำลังซิงค์…",err:"ซิงค์ไม่สำเร็จ",offline:"ออฟไลน์"};b.textContent=map[state]||map.off;b.classList.remove("pri");b.title=msg||"";}
-  const v=$("verTag");if(v){const t=lastSync?lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"}):null;v.textContent="v"+APP_VER+(state==="busy"?" · กำลังซิงค์…":state==="offline"?" · ออฟไลน์":state==="err"?" · ซิงค์ไม่สำเร็จ":t?" · ซิงค์ "+t:" · ยังไม่ซิงค์");v.style.color=(state==="err"||state==="offline")?"var(--red)":"";}} // ระหว่างดึงข้อมูลให้บอกว่า "กำลังซิงค์…" (เดิมขึ้น "ยังไม่ซิงค์" ตอนเปิดหน้า ทำให้เข้าใจผิด) // ป้ายเวอร์ชัน+เวลาซิงค์ ให้เห็นทันทีว่าเครื่องนี้ตรงกับเครื่องอื่นไหม
+  const v=$("verTag");if(v){const t=lastSync?lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"}):null;v.textContent="v"+APP_VER+(state==="busy"?" · กำลังซิงค์…":state==="offline"?" · ออฟไลน์":state==="err"?" · ซิงค์ไม่สำเร็จ":t?" · ซิงค์ "+t:" · ยังไม่ซิงค์")+((dirty&&state!=="busy")?" · ⚠ รอส่งขึ้นชีท":"");v.style.color=(state==="err"||state==="offline")?"var(--red)":((dirty&&state!=="busy")?"var(--amber)":"");v.title=dirty?"มีรายการในเครื่องนี้ที่ยังไม่ถูกส่งขึ้นชีท — แอปจะลองส่งเองทุก 15 วินาที":"เวอร์ชันแอปของเครื่องนี้ · เวลาซิงค์ล่าสุดกับชีท";}} // ระหว่างดึงข้อมูลให้บอกว่า "กำลังซิงค์…" (เดิมขึ้น "ยังไม่ซิงค์" ตอนเปิดหน้า ทำให้เข้าใจผิด) // ป้ายเวอร์ชัน+เวลาซิงค์ ให้เห็นทันทีว่าเครื่องนี้ตรงกับเครื่องอื่นไหม
 function persistLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}}
-function schedulePush(){dirty=true;if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1200);} // ทุกการแก้ในเครื่อง = dirty จนกว่าจะ push สำเร็จ
+function schedulePush(){dirty=true;try{setSyncBtn("ok");}catch(e){}if(!syncUrl||!syncReady)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushRemote,1200);} // ทุกการแก้ในเครื่อง = dirty จนกว่าจะ push สำเร็จ
 /* push แบบ read-modify-write: ดึงของล่าสุดมารวมก่อนส่ง → ไม่ทับงานเครื่องอื่น (กันข้อมูลเปลี่ยนไปเปลี่ยนมา) */
 let pushing=false,pushAgain=false;
 async function pushRemote(){if(!syncUrl)return;
