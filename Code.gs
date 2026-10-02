@@ -170,6 +170,7 @@ function mergeState_(stored, incoming) {
         var st = (sm.tasks || [])[i]; if (!st) return;
         var mp = Math.max(+t.prog || 0, +st.prog || 0);    // ความคืบหน้าไม่ถอยหลัง
         if (mp !== (+t.prog || 0)) t.prog = mp;
+        if ((t.days == null || !(t.days > 0)) && st.days > 0) t.days = st.days;  // อย่าให้ "จำนวนวัน" หาย (เครื่องเก่าที่ยังไม่ migrate ส่งวันว่างมา)
         if ((t.labor == null || t.labor === '') && st.labor != null) t.labor = st.labor;
         if ((!t.note || t.note === '') && st.note) t.note = st.note;
       });

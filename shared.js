@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=72; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=73; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -65,6 +65,10 @@ function normalizeData(d){try{if(!d||!d.groups)return d;
   if((d.mig||0)<6){ // ครั้งเดียว (ตั้งต้นกติกาวัน 03/09/2026): งานที่ช่วงวันคาบวันหยุดใหม่ (11/09, 26/10) จะมีวันทำงานน้อยกว่า days → ขยับวันเสร็จให้ครบ
     d.groups.forEach(g=>g.machines.forEach(m=>m.tasks.forEach(t=>{if(t.start==null||t.finish==null||!(t.days>0))return;let f=t.finish,guard=0;while(workingSerials(t.start,f).length<t.days&&guard<400){f++;guard++;}if(f!==t.finish)t.finish=f;})));
     d.mig=6;
+  }
+  if((d.mig||0)<7){ // ครั้งเดียว: งานที่มีช่วงวันที่ในแผน (start–finish) แต่ "จำนวนวัน" ว่าง → เติมจำนวนวัน = วันทำงานในช่วงนั้น (ไม่งั้นน้ำหนัก=0 ไม่ถูกนับใน % รวม ทั้งที่ทำงานแล้ว)
+    d.groups.forEach(g=>g.machines.forEach(m=>m.tasks.forEach(t=>{if((t.days==null||!(t.days>0))&&t.start!=null&&t.finish!=null){const dy=workingSerials(t.start,t.finish).length;if(dy>0)t.days=dy;}})));
+    d.mig=7;
   }
 }catch(e){}return d;}
 /* ---- รวม log แบบ convergent: ไม่ทับกัน · อัปเดตสถานะข้ามเครื่องได้ · ทุกเครื่องลู่เข้าค่าเดียวกัน ---- */
