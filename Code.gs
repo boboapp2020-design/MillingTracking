@@ -64,7 +64,10 @@ function doPost(e) {
         setState_(merged);                       // เขียน JSON อย่างเดียว เร็ว (~1-2 วิ)
       } finally { try { lock.releaseLock(); } catch (le2) {} }
       maybeWriteTables_(merged);                  // เขียนตารางอ่านง่าย (ช้า) นอก lock + จำกัดความถี่ ไม่ให้ POST หน่วง
-      return json_({ ok: true, savedAt: new Date().toISOString(), merged: true });
+      // ยืนยันว่า "เก็บจริง": อ่านกลับมานับ log แล้วตอบพร้อม id ที่เก็บได้ — แอปใช้เช็คว่ารายการของตัวเองอยู่ในชีทจริง ไม่ใช่แค่ตอบ ok
+      var back = getState_(), ids = [];
+      if (back && back.logs) for (var q = 0; q < back.logs.length; q++) ids.push(back.logs[q].id);
+      return json_({ ok: true, savedAt: new Date().toISOString(), merged: true, stored: ids.length, ids: ids });
     }
     return json_({ ok: false, error: 'invalid payload' });
   } catch (err) {
@@ -112,20 +115,35 @@ function appendSnapshot_(s) {
   }
 }
 
+/* เก็บ state เป็น "หลายช่อง" (A1, A2, A3 …) ชิ้นละ ≤ 40,000 ตัวอักษร
+   เหตุผล: Google Sheets รับได้ ≤ 50,000 ตัวอักษรต่อ 1 ช่อง — ของเดิมเก็บช่องเดียว ข้อมูลโตจน 49,990 ชน
+   เพดาน แล้ว "รายการใหม่ไม่ถูกเก็บ" ทั้งที่ตอบ ok (บันทึกหายเงียบๆ ตั้งแต่ 25/09) */
+var STATE_CHUNK = 40000;
 function getState_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(STATE_SHEET);
   if (!sh) return null;
-  var v = sh.getRange('A1').getValue();
-  if (!v) return null;
-  try { return JSON.parse(v); } catch (e) { return null; }
+  var last = sh.getLastRow();
+  if (last < 1) return null;
+  var cells = sh.getRange(1, 1, last, 1).getValues();
+  var s = '';
+  for (var i = 0; i < cells.length; i++) s += (cells[i][0] || '');
+  if (!s) return null;
+  try { return JSON.parse(s); } catch (e) { return null; }
 }
 
 function setState_(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(STATE_SHEET);
   if (!sh) { sh = ss.insertSheet(STATE_SHEET); sh.hideSheet(); }
-  sh.getRange('A1').setValue(JSON.stringify(data));
+  var json = JSON.stringify(data);
+  var parts = [];
+  for (var i = 0; i < json.length; i += STATE_CHUNK) parts.push([json.substring(i, i + STATE_CHUNK)]);
+  if (!parts.length) parts.push(['']);
+  var prevLast = sh.getLastRow();
+  sh.getRange(1, 1, parts.length, 1).setValues(parts);
+  if (prevLast > parts.length) sh.getRange(parts.length + 1, 1, prevLast - parts.length, 1).clearContent();  // ล้างช่องเก่าที่เกิน
+  SpreadsheetApp.flush();
 }
 
 /* ===== merge state ฝั่งเซิร์ฟเวอร์ (แหล่งความจริงเดียว) =====

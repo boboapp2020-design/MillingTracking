@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=77; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=78; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -308,7 +308,10 @@ async function pushRemote(){if(!syncUrl)return;
     try{DATA.summary={overall:+actualPct().toFixed(3),ver:APP_VER,asOf:thaiDMY()+" "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Bangkok"})};}catch(e){}
     const res=await fetchRetry(syncUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:DATA,key:SYNC_KEY})},40000,6);
     const j=await res.json();
-    if(j&&j.ok){dirty=false;lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
+    // ตรวจว่าเซิร์ฟเวอร์ "เก็บจริง": ถ้ามีรายการ id ตอบกลับมา → log ของเราที่ยังรอตรวจ/ยังไม่ถูกลบ ต้องอยู่ในนั้นครบ ไม่งั้นถือว่าส่งไม่สำเร็จ (กัน ok หลอก)
+    var missing=0;if(j&&j.ok&&Array.isArray(j.ids)){const have={};j.ids.forEach(function(i){have[i]=1;});(DATA.logs||[]).forEach(function(L){if(L&&L.id&&L.status!=="deleted"&&!have[L.id])missing++;});}
+    if(j&&j.ok&&missing>0){setSyncBtn("err","เซิร์ฟเวอร์ตอบรับแต่ยังไม่เก็บ "+missing+" รายการ");}
+    else if(j&&j.ok){dirty=false;lastSync=new Date();persistLocal();if(!isEditing()&&typeof render==="function")render();setSyncBtn("ok","อัปเดตชีทล่าสุด "+lastSync.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));}
     else if(!syncedRecently())setSyncBtn("err",(j&&j.error)||"ไม่ทราบสาเหตุ"); // เพิ่งสำเร็จไม่นาน → เงียบไว้ ลองใหม่เอง ไม่ตื่นตูม
   }catch(e){if(!syncedRecently())setSyncBtn("offline","เชื่อมต่อไม่เสถียร · ข้อมูลถูกเก็บในเครื่องแล้ว กำลังลองใหม่");}
   finally{pushing=false;if(pushAgain){pushAgain=false;setTimeout(pushRemote,400);}}
