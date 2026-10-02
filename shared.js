@@ -6,7 +6,7 @@ function dToSerial(d){return ANCHOR_SERIAL+Math.round((d-ANCHOR)/86400000);}
 function isoOf(s){if(s==null||s==="")return"";const d=sd(s);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function serialOfIso(iso){if(!iso)return null;const p=iso.split("-");return dToSerial(new Date(+p[0],+p[1]-1,+p[2]));}
 function fmtTH(s){if(s==null||s==="")return"—";const d=sd(s);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+(d.getFullYear()+543).toString().slice(2);}
-const APP_VER=73; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
+const APP_VER=74; // ต้องตรงกับ version.json — bump ทุก deploy (แอปจะอัปเดตตัวเองทุกเครื่องเมื่อเลขนี้เปลี่ยน)
 /* กติกาวันทำงาน (ตั้งต้นใหม่ 03/09/2026): ทำงานทุกวัน หยุดเฉพาะ "วันอาทิตย์" + วันหยุดพิเศษ 11/09/2026 และ 26/10/2026 · วันละ 8 ชม. */
 const HOLIDAYS=new Set([46276,46321]); // 11/09/2026, 26/10/2026
 function isHoliday(d){return d.getDay()===0||HOLIDAYS.has(dToSerial(d));}
@@ -69,6 +69,10 @@ function normalizeData(d){try{if(!d||!d.groups)return d;
   if((d.mig||0)<7){ // ครั้งเดียว: งานที่มีช่วงวันที่ในแผน (start–finish) แต่ "จำนวนวัน" ว่าง → เติมจำนวนวัน = วันทำงานในช่วงนั้น (ไม่งั้นน้ำหนัก=0 ไม่ถูกนับใน % รวม ทั้งที่ทำงานแล้ว)
     d.groups.forEach(g=>g.machines.forEach(m=>m.tasks.forEach(t=>{if((t.days==null||!(t.days>0))&&t.start!=null&&t.finish!=null){const dy=workingSerials(t.start,t.finish).length;if(dy>0)t.days=dy;}})));
     d.mig=7;
+  }
+  if((d.mig||0)<8){ // ครั้งเดียว: "ประกอบแปรงปัดใบสะพาน" (หลัง Test Run) ไม่มีวัน/ช่วงวันที่ในแผน → ตั้ง 2 วัน ให้ความคืบหน้านับเข้า % รวม (ผู้ใช้อนุมัติให้ตั้งตามที่แนะนำ)
+    d.groups.forEach(g=>g.machines.forEach(m=>{if(m.id==="pmain")m.tasks.forEach(t=>{if(t.name==="ประกอบแปรงปัดใบสะพาน"&&(t.days==null||!(t.days>0)))t.days=2;});}));
+    d.mig=8;
   }
 }catch(e){}return d;}
 /* ---- รวม log แบบ convergent: ไม่ทับกัน · อัปเดตสถานะข้ามเครื่องได้ · ทุกเครื่องลู่เข้าค่าเดียวกัน ---- */
